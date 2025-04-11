@@ -9,21 +9,37 @@
   </head>
   <body>
     <a-scene>
+
+      <!-- Pink directional light shining from above -->
+      <a-entity light="type: directional; color: #ff69b4; intensity: 1.5"
+                position="0 10 -5" rotation="-90 0 0"></a-entity>
+
+      <!-- Optional stronger white sunlight to contrast -->
+      <a-entity light="type: directional; color: #ffffff; intensity: 0.5"
+                position="-2 5 2" rotation="-45 0 0"></a-entity>
+
+      <!-- Ambient light for base fill -->
+      <a-entity light="type: ambient; color: #555"></a-entity>
+
+      <!-- Rain particles -->
       <a-entity id="rain" particle-system="preset: rain; color: #00008B; particleCount: 5000; size: 2; opacity: 1"></a-entity>
 
+      <!-- Sphere with light -->
       <a-entity id="sphere" geometry="primitive: sphere"
                 material="color: #EFEFEF; shader: flat"
                 position="0 0.15 -5"
                 light="type: point; intensity: 5"
                 animation="property: position; easing: easeInOutQuad; dir: alternate; dur: 1000; to: 0 -0.10 -5; loop: true"></a-entity>
 
-      <a-entity id="ocean" ocean="density: 20; width: 50; depth: 80; speed: 2"
-                material="color: #00008B; opacity: 0.75; metalness: 0; roughness: 1"
+      <!-- Ocean with more reflective material -->
+      <a-entity id="ocean"
+                ocean="density: 20; width: 50; depth: 80; speed: 2"
+                material="color: #00008B; opacity: 0.95; metalness: 0.6; roughness: 0.1"
                 rotation="-90 0 0"></a-entity>
 
+      <!-- Sky -->
       <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
 
-      <a-entity id="light" light="type: ambient; color: #888"></a-entity>
     </a-scene>
   </body>
 </html>
