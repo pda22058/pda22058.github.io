@@ -9,7 +9,8 @@
   </head>
   <body>
     <a-scene>
-      <a-entity id="rain" particle-system="preset: rain; color: #24CAFF; particleCount: 5000"></a-entity>
+      
+      <a-entity id="rain" particle-system="preset: rain; color: #263033; particleCount: 2000"></a-entity>
 
       <a-entity id="sphere" geometry="primitive: sphere"
                 material="color: #EFEFEF; shader: flat"
@@ -17,13 +18,13 @@
                 light="type: point; intensity: 5"
                 animation="property: position; easing: easeInOutQuad; dir: alternate; dur: 1000; to: 0 -0.10 -5; loop: true"></a-entity>
 
-      <a-entity id="ocean" ocean="density: 20; width: 50; depth: 50; speed: 4"
-                material="color: #9CE3F9; opacity: 0.75; metalness: 0; roughness: 1"
+      <a-entity id="ocean" ocean="density: 20; width: 50; depth: 50; speed: 5"
+                material="color: #6b909c; opacity: 0.5; metalness: 0; roughness: 1"
                 rotation="-90 0 0"></a-entity>
 
-      <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
-
-      <a-entity id="light" light="type: ambient; color: #585"></a-entity>
+<a-sky color="#69767a"></a-sky>
+<a-scene target-spawner>
+      <a-entity id="light" light="type: ambient; color: #688"></a-entity>
     </a-scene>
   </body>
 </html>
