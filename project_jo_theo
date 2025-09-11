@@ -2,159 +2,178 @@
 <html lang="el">
   <head>
     <meta charset="utf-8" />
-    <title>Stormy Ocean VR</title>
+    <title>Stormy Ocean VR — Bounded</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- A-Frame -->
-    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
+    <!-- A-Frame + Extras (movement-controls) -->
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.0/dist/aframe-extras.min.js"></script>
+
+    <!-- ======= Ocean Waves Component (Gerstner-like multi-sine) ======= -->
     <script>
-      // ======= Ocean Waves Component (Gerstner-like multi-sine) =======
       AFRAME.registerComponent('ocean-waves', {
         schema: {
-          size:   {type: 'number', default: 2000},   // πλάτος/ύψος επιφάνειας
-          segs:   {type: 'int',    default: 400},    // υποδιαιρέσεις πλέγματος (περισσότερο = πιο ομαλά κύματα)
-          amp:    {type: 'number', default: 4.0},    // ένταση κυμάτων (ύψος)
-          chop:   {type: 'number', default: 1.2},    // «άγρια» αιχμή κορυφών
-          speed:  {type: 'number', default: 0.6},    // ταχύτητα κίνησης
-          steep:  {type: 'number', default: 1.0},    // κλίση (steepness)
-          color:  {type: 'color',  default: '#0a2a43'},
-          metal:  {type: 'number', default: 0.05},
-          rough:  {type: 'number', default: 0.8}
+          size:   {type: 'number', default: 10000}, // τεράστια επιφάνεια
+          segs:   {type: 'int',    default: 512},   // υποδιαιρέσεις πλέγματος
+          amp:    {type: 'number', default: 6.0},   // ύψος κυμάτων
+          chop:   {type: 'number', default: 1.4},   // αιχμηρές κορυφές
+          speed:  {type: 'number', default: 0.7},   // ταχύτητα κίνησης
+          steep:  {type: 'number', default: 1.2},   // κλίση
+          color:  {type: 'color',  default: '#092338'}
         },
-        init: function () {
-          const el = this.el;
-          const d  = this.data;
-
-          // Δημιουργία μεγάλου plane για τη θάλασσα
+        init() {
+          const d = this.data;
           const geom = new THREE.PlaneGeometry(d.size, d.size, d.segs, d.segs);
-          geom.rotateX(-Math.PI / 2);
+          geom.rotateX(-Math.PI/2);
 
-          // Shader υλικό με απόκλιση κορυφών (multi-directional waves)
           this.uniforms = {
-            uTime:   {value: 0},
-            uAmp:    {value: d.amp},
-            uChop:   {value: d.chop},
-            uSpeed:  {value: d.speed},
-            uSteep:  {value: d.steep},
-            uColor:  {value: new THREE.Color(d.color)}
+            uTime:  {value: 0},
+            uAmp:   {value: d.amp},
+            uChop:  {value: d.chop},
+            uSpeed: {value: d.speed},
+            uSteep: {value: d.steep},
+            uColor: {value: new THREE.Color(d.color)}
           };
 
           const vertexShader = `
-            uniform float uTime;
-            uniform float uAmp;
-            uniform float uChop;
-            uniform float uSpeed;
-            uniform float uSteep;
-            varying vec3 vPos;
-            varying vec3 vNormal;
+            uniform float uTime, uAmp, uChop, uSpeed, uSteep;
+            varying vec3 vPos; varying vec3 vNormal;
 
-            // 3 κατευθύνσεις κυμάτων για «χαοτική» θάλασσα
-            vec3 wave(vec3 p, vec2 dir, float freq, float phase){
+            vec3 wave(vec3 p, vec2 dir, float freq){
               float theta = dot(dir, p.xz) * freq + uTime * uSpeed;
               float a = uAmp / freq;
-              // "choppy" κορυφές
-              float s = sin(theta);
               float c = cos(theta);
+              float s = sin(theta);
               p.x += (uSteep * a * dir.x * c * uChop);
               p.z += (uSteep * a * dir.y * c * uChop);
               p.y += a * s;
               return p;
             }
-
             void main(){
               vec3 p = position;
-              // Κατευθύνσεις (νορμαρισμένες)
               vec2 d1 = normalize(vec2( 1.0,  0.3));
               vec2 d2 = normalize(vec2(-0.6,  1.0));
               vec2 d3 = normalize(vec2( 0.2, -1.0));
 
-              // διαφορετικές συχνότητες για «σπάσιμο» επανάληψης
-              p = wave(p, d1, 0.6, 0.0);
-              p = wave(p, d2, 1.1, 0.0);
-              p = wave(p, d3, 1.7, 0.0);
+              p = wave(p, d1, 0.6);
+              p = wave(p, d2, 1.1);
+              p = wave(p, d3, 1.7);
 
               vPos = p;
-              // Προσέγγιση normal από παράγωγο (απλή)
-              vec3 dx = vec3(1.0, 0.0, 0.0);
-              vec3 dz = vec3(0.0, 0.0, 1.0);
-              vec3 p_dx = p + dx; vec3 p_dz = p + dz;
-              vNormal = normalize(cross(p_dz - p, p_dx - p));
-
+              vec3 dx = dFdx(p);
+              vec3 dz = dFdy(p);
+              vNormal = normalize(cross(dz, dx));
               gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
             }
           `;
-
           const fragmentShader = `
-            uniform vec3 uColor;
-            varying vec3 vPos;
-            varying vec3 vNormal;
-
+            uniform vec3 uColor; varying vec3 vNormal;
             void main(){
-              // απλό φωτιστικό μοντέλο με "rim" για λάμψη στις κορυφές
               vec3 N = normalize(vNormal);
-              vec3 L = normalize(vec3(0.4, 0.8, 0.2)); // φως από πλάγια/πάνω
-              float diff = clamp(dot(N, L), 0.0, 1.0);
-
+              vec3 L = normalize(vec3(0.4, 0.8, 0.2));
+              float diff = clamp(dot(N,L), 0.0, 1.0);
               float rim = pow(1.0 - max(dot(N, vec3(0.0,1.0,0.0)), 0.0), 2.0);
               vec3 base = uColor * (0.25 + 0.75*diff) + vec3(0.3)*rim;
-
               gl_FragColor = vec4(base, 1.0);
             }
           `;
-
           const mat = new THREE.ShaderMaterial({
-            vertexShader,
-            fragmentShader,
-            uniforms: this.uniforms,
-            lights: false,
-            fog: true
+            vertexShader, fragmentShader, uniforms: this.uniforms, fog: true
           });
 
           const mesh = new THREE.Mesh(geom, mat);
           mesh.receiveShadow = true;
-          el.setObject3D('mesh', mesh);
+          this.el.setObject3D('mesh', mesh);
         },
-        tick: function (t, dt) {
-          if (!this.uniforms) return;
-          this.uniforms.uTime.value = t / 1000.0; // seconds
+        tick(t){ if (this.uniforms) this.uniforms.uTime.value = t/1000.0; }
+      });
+    </script>
+
+    <!-- ======= Circular Play-Area Bounds (soft push-back + HUD) ======= -->
+    <script>
+      AFRAME.registerComponent('play-area-bounds', {
+        schema: {
+          radius: {type: 'number', default: 350}, // πόσο μεγάλη «αρένα» θα έχεις
+          center: {type: 'vec3', default: {x:0,y:0,z:0}},
+          mode:   {type: 'string', default: 'push'} // 'push' ή 'clamp'
+        },
+        init() {
+          // HUD μήνυμα πάνω στην κάμερα
+          const cam = this.el.querySelector('[camera]');
+          const hud = document.createElement('a-entity');
+          hud.setAttribute('text','value: Φουρτουνιασμένα νερά — μην προχωράς άλλο!; align: center; width: 2.6; color: #cfe3ff; opacity: 0');
+          hud.setAttribute('position','0 -0.3 -1.2');
+          hud.setAttribute('visible','true');
+          cam && cam.appendChild(hud);
+          this.hud = hud;
+          this.fade = 0;
+        },
+        tick(t, dt) {
+          const p = this.el.object3D.position;
+          const c = this.data.center;
+          const r = this.data.radius;
+          const dx = p.x - c.x, dz = p.z - c.z;
+          const dist = Math.hypot(dx, dz);
+          const near = dist > r * 0.94;
+
+          if (dist > r) {
+            const nx = dx / dist, nz = dz / dist;
+            if (this.data.mode === 'clamp') {
+              p.x = c.x + nx * r; p.z = c.z + nz * r;
+            } else {
+              const over = dist - r;
+              const strength = Math.min(1.0, over / 3.0);
+              p.x -= nx * strength * 0.35;
+              p.z -= nz * strength * 0.35;
+            }
+          }
+
+          // HUD fade in/out
+          this.fade += (near ? 1 : -1) * (dt/1000) * 2;
+          this.fade = Math.min(1, Math.max(0, this.fade));
+          if (this.hud) this.hud.setAttribute('text', `opacity: ${this.fade.toFixed(2)}`);
         }
       });
     </script>
   </head>
+
   <body>
     <a-scene
       renderer="antialias:true; physicallyCorrectLights:true; colorManagement:true; highRefreshRate:true"
       background="color: #0b1220"
-      fog="type: exponential; color: #0b1220; density: 0.02"
+      fog="type: exponential; color: #0b1220; density: 0.04"
       vr-mode-ui="enabled: true">
 
-      <!-- Φώτα για σκοτεινή, καταιγιστική ατμόσφαιρα -->
+      <!-- Lights -->
       <a-entity light="type:ambient; intensity:0.25; color:#99aabb"></a-entity>
       <a-entity light="type:directional; intensity:0.6; color:#cfd8ff" position="-10 15 5" cast-shadow="true"></a-entity>
 
-      <!-- Assets: Βάλε εδώ ΠΑΝΟΡΑΜΙΚΟ cloudy 360° -->
+      <!-- Assets (βάλε δικό σου 360° cloudy sky στο cloudy_8k.jpg) -->
       <a-assets>
-        <!-- αντικατάστησε με δικό σου 360° cloudy ουρανό -->
         <img id="cloudySky" src="cloudy_8k.jpg" crossorigin="anonymous">
         <audio id="storm" src="storm_wind.wav" preload="auto"></audio>
       </a-assets>
 
-      <!-- Συννεφιασμένος ουρανός (equirectangular 360°) -->
+      <!-- Cloudy 360° Sky -->
       <a-sky src="#cloudySky" rotation="0 -90 0"></a-sky>
 
-      <!-- Τρικυμία / Ωκεανός -->
-      <a-entity ocean-waves="size:2000; segs:400; amp:6; chop:1.4; steep:1.2; speed:0.7; color:#092338"></a-entity>
+      <!-- Infinite-feel Ocean -->
+      <a-entity ocean-waves="size:10000; segs:512; amp:7.5; chop:1.5; steep:1.25; speed:0.75; color:#082534"></a-entity>
 
-      <!-- Ambience ήχου (προαιρετικό) -->
+      <!-- Ambience (προαιρετικό) -->
       <a-entity sound="src:#storm; autoplay:true; loop:true; volume:0.4"></a-entity>
 
-      <!-- First-person RIG (πληκτρολόγιο/ποντίκι + VR headset) -->
-      <a-entity id="rig" position="0 1.6 0" movement-controls="speed: 2; constrainToNavMesh: false">
+      <!-- First-person VR Rig με όριο κίνησης -->
+      <a-entity id="rig"
+                position="0 1.6 0"
+                movement-controls="speed: 2.2; constrainToNavMesh: false"
+                play-area-bounds="radius: 350; mode: push">
         <a-entity camera look-controls="pointerLockEnabled: true"></a-entity>
       </a-entity>
 
-      <!-- Προαιρετικό: δείκτης -->
-      <a-entity cursor="rayOrigin:mouse"></a-entity>
+      <!-- Προαιρετικός cursor (mouse) -->
+      <a-entity cursor="rayOrigin: mouse"></a-entity>
     </a-scene>
   </body>
 </html>
+
