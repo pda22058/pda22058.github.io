@@ -1,7 +1,7 @@
 <html>
   <head>
-    <title>Jawrka</title>
-    <meta name="description" content="Jawrka">
+    <title>Community Components Experiment</title>
+    <meta name="description" content="Community Components Experiment">
     <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
     <script src="https://unpkg.com/@c-frame/aframe-particle-system-component@1.2.x/dist/aframe-particle-system-component.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-simple-sun-sky@^1.2.2/simple-sun-sky.js"></script>
@@ -9,7 +9,7 @@
   </head>
   <body>
     <a-scene>
-      <a-entity id="rain" particle-system="preset: rain; color: #24CAFF; particleCount: 5000"></a-entity>
+      <a-entity id="rain" particle-system="preset: rain; color: #24CAFF; particleCount: 10000"></a-entity>
 
       <a-entity id="sphere" geometry="primitive: sphere"
                 material="color: #EFEFEF; shader: flat"
