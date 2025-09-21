@@ -24,6 +24,12 @@
   </div>
 
   <a-scene>
+    <!-- ASSETS: preload your bottle model -->
+    <a-assets timeout="30000">
+      <!-- If your file name is exactly 'scene.gltf'. If it's 'scene .gltf' with a space, change the path to match. -->
+      <a-asset-item id="bottleGLTF" src="assets/models/scene.gltf"></a-asset-item>
+    </a-assets>
+
     <!-- Rain effect -->
     <a-entity id="rain" particle-system="preset: rain; color: #aee7ff; particleCount: 5000"></a-entity>
 
@@ -85,20 +91,19 @@
       for(let i=0;i<n;i++){
         const e = document.createElement('a-entity');
         e.setAttribute('collectible','');
+
+        // USE YOUR GLTF BOTTLE
+        e.setAttribute('gltf-model', '#bottleGLTF');
+        e.setAttribute('scale', '0.4 0.4 0.4');                 // tweak if needed
+        e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
+
         e.setAttribute('position', `${randRange(-20,20)} ${randRange(0.7,1.2)} ${randRange(-20,20)}`);
-        e.setAttribute('geometry','primitive: cylinder; radius: 0.08; height: 0.32');
-        e.setAttribute('material','color: #9fd9ff; metalness: 0.2; roughness: 0.3; emissive: #002244; emissiveIntensity: 0.05');
-        const cap = document.createElement('a-entity');
-        cap.setAttribute('position','0 0.18 0');
-        cap.setAttribute('geometry','primitive: cylinder; radius: 0.06; height: 0.06');
-        cap.setAttribute('material','color:#245b8a');
-        e.appendChild(cap);
         parent.appendChild(e);
       }
     }
   });
 
-  /* ==== UPDATED: bottle disappears on camera touch ==== */
+  /* Bottle disappears on camera touch */
   AFRAME.registerComponent('collectible',{
     schema:{ radius:{default:0.55} },  // touch distance
     init(){
@@ -113,7 +118,6 @@
       this.player.object3D.getWorldPosition(this._q);
       if (this._p.distanceTo(this._q) < this.data.radius){
         this._removed = true;
-        // hide immediately, then remove from scene so it disappears completely
         this.el.setAttribute('visible','false');
         this.el.parentNode && this.el.parentNode.removeChild(this.el);
         setStatus('Collected a bottle!');
@@ -160,12 +164,12 @@
       ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
       this.el.appendChild(ring);
 
-      // Filled red disk inside (solid/semi-transparent)
+      // Filled red disk inside (semi-transparent)
       const disk = document.createElement('a-entity');
       disk.setAttribute('geometry','primitive: circle; radius: 0.8');
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
       disk.setAttribute('rotation','-90 0 0');
-      disk.setAttribute('rotation','0 0.6 0');
+      disk.setAttribute('rotation','0 0.6 0'); // kept from your script
       this.el.appendChild(disk);
 
       this.start = performance.now();
