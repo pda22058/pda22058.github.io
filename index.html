@@ -24,21 +24,12 @@
   </div>
 
   <a-scene>
-    <!-- 1) ΠΡΟΣΘΗΚΗ: Φόρτωσε το GLTF/GLB μοντέλο σου εδώ -->
-    <a-assets timeout="30000">
-      <!-- Άλλαξε τη διαδρομή/όνομα όπως ταιριάζει στο project σου -->
-      <a-asset-item id="bottleGLTF" src="assets/models/bottle.gltf"></a-asset-item>
-      <!-- Αν έχεις .glb, χρησιμοποίησε:
-      <a-asset-item id="bottleGLTF" src="assets/models/bottle.glb"></a-asset-item>
-      -->
-    </a-assets>
-
     <!-- Rain effect -->
     <a-entity id="rain" particle-system="preset: rain; color: #aee7ff; particleCount: 5000"></a-entity>
 
     <!-- Ocean surface from community component -->
-    <a-entity id="ocean" ocean="density: 20; width: 200; depth: 200; speed: 4 amplitude: 2.5"
-              material="color: #213e52; opacity: 0.9; metalness: 0; roughness: 1"
+    <a-entity id="ocean" ocean="density: 20; width: 200; depth: 200; speed: 4 amplitude: 4.5"
+              material="color: #6b909c; opacity: 0.3; metalness: 0; roughness: 1"
               rotation="-90 0 0"></a-entity>
 
     <!-- Simple sun & sky -->
@@ -48,7 +39,7 @@
     <a-entity light="type: ambient; color: #888"></a-entity>
 
     <!-- Player rig -->
-    <a-entity id="rig" position="0 1.0 0">
+    <a-entity id="rig" position="0 1.2 0">
       <a-entity id="player" camera look-controls wasd-controls></a-entity>
     </a-entity>
 
@@ -89,33 +80,29 @@
       cam.removeAttribute('wasd-controls');
       cam.removeAttribute('look-controls');
     },
-
-    // 2) ΜΟΝΗ ΑΛΛΑΓΗ ΕΔΩ: χρησιμοποιούμε gltf-model αντί για primitive cylinders
     spawnCollectibles(n){
       const parent = document.getElementById('collectibles');
       for(let i=0;i<n;i++){
         const e = document.createElement('a-entity');
         e.setAttribute('collectible','');
         e.setAttribute('position', `${randRange(-20,20)} ${randRange(0.7,1.2)} ${randRange(-20,20)}`);
-
-        // ΧΡΗΣΗ ΤΟΥ GLTF ΜΟΝΤΕΛΟΥ
-        e.setAttribute('gltf-model', '#bottleGLTF');
-
-        // (Προαιρετικά) ρύθμιση κλίμακας/περιστροφής ώστε να “κάθεται” σωστά στη σκηνή
-        e.setAttribute('scale', '0.4 0.4 0.4');
-        e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
-
-        // ΔΕΝ δημιουργούμε cap/cylinder πλέον — το GLTF τα περιλαμβάνει
+        e.setAttribute('geometry','primitive: cylinder; radius: 0.08; height: 0.32');
+        e.setAttribute('material','color: #9fd9ff; metalness: 0.2; roughness: 0.3; emissive: #002244; emissiveIntensity: 0.05');
+        const cap = document.createElement('a-entity');
+        cap.setAttribute('position','0 0.18 0');
+        cap.setAttribute('geometry','primitive: cylinder; radius: 0.06; height: 0.06');
+        cap.setAttribute('material','color:#245b8a');
+        e.appendChild(cap);
         parent.appendChild(e);
       }
     }
   });
 
-  /* ==== Συλλογή όπως πριν: εξαφανίζονται με επαφή της κάμερας ==== */
+  /* ==== UPDATED: bottle disappears on camera touch ==== */
   AFRAME.registerComponent('collectible',{
-    schema:{ radius:{default:0.55} },  // απόσταση “αγγίγματος”
+    schema:{ radius:{default:0.55} },  // touch distance
     init(){
-      this.player = document.querySelector('#player'); // collision με την ΚΑΜΕΡΑ
+      this.player = document.querySelector('#player'); // collide with the CAMERA
       this._removed = false;
       this._p = new THREE.Vector3();
       this._q = new THREE.Vector3();
@@ -126,6 +113,7 @@
       this.player.object3D.getWorldPosition(this._q);
       if (this._p.distanceTo(this._q) < this.data.radius){
         this._removed = true;
+        // hide immediately, then remove from scene so it disappears completely
         this.el.setAttribute('visible','false');
         this.el.parentNode && this.el.parentNode.removeChild(this.el);
         setStatus('Collected a bottle!');
@@ -164,6 +152,7 @@
   AFRAME.registerComponent('target-marker',{
     schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
     init(){
+      // Red ring (glowing torus)
       const ring = document.createElement('a-entity');
       ring.setAttribute('geometry','primitive: torus; radius: 5.0; radiusTubular: 0.05; arc: 360');
       ring.setAttribute('material','color:#ff2b2b; emissive:#a10000; emissiveIntensity:0.6');
@@ -171,10 +160,12 @@
       ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
       this.el.appendChild(ring);
 
+      // Filled red disk inside (solid/semi-transparent)
       const disk = document.createElement('a-entity');
       disk.setAttribute('geometry','primitive: circle; radius: 0.8');
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
       disk.setAttribute('rotation','-90 0 0');
+      disk.setAttribute('rotation','0 0.6 0');
       this.el.appendChild(disk);
 
       this.start = performance.now();
