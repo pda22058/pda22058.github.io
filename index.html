@@ -42,7 +42,7 @@
     <a-entity light="type: ambient; color: #888"></a-entity>
 
     <!-- Player rig (lower if you want easier collection) -->
-    <a-entity id="rig" position="0 0.6 0">
+    <a-entity id="rig" position="0 0.7 0">
       <a-entity id="player" camera look-controls wasd-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
@@ -150,7 +150,7 @@
 
       const x = randRange(-this.halfW, this.halfW);
       const z = randRange(-this.halfD, this.halfD);
-      const y = 0.6; // lower above waves (tweak if needed)
+      const y = 0.1; // lower above waves (tweak if needed)
 
       const e = document.createElement('a-entity');
       e.setAttribute('collectible','');                   // collision logic
@@ -166,7 +166,7 @@
 
   // Bottle disappears on camera touch + notify manager to spawn next
   AFRAME.registerComponent('collectible',{
-    schema:{ radius:{default:0.75} }, // a bit wider for easier pickup with low camera
+    schema:{ radius:{default:1.1} }, // a bit wider for easier pickup with low camera
     init(){
       this.player = document.querySelector('#player');
       this._removed = false;
@@ -225,7 +225,7 @@
       this.el.appendChild(ring);
 
       const disk = document.createElement('a-entity');
-      disk.setAttribute('geometry','primitive: circle; radius: 0.8');
+      disk.setAttribute('geometry','primitive: circle; radius: 4.8');
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
       disk.setAttribute('rotation','-90 0 0');
       this.el.appendChild(disk);
