@@ -86,8 +86,8 @@
       this.survival = 100;           // starts at 100%
       setMeter(this.survival);
       this.decayTimer = setInterval(() => {
-        if (!this.isGameOver) this.adjustSurvival(-10);   // -10% every 5s
-      }, 5000);
+        if (!this.isGameOver) this.adjustSurvival(-10);   // -10% every 10s
+      }, 10000);
 
       // Bottle events
       this.isSpawning = false;
