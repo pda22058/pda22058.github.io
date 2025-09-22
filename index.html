@@ -15,31 +15,6 @@
     .hud { position: fixed; left: 12px; top: 12px; font: 14px/1.4 system-ui, sans-serif; color: #fff; z-index: 10; }
     .hud .pill { background: rgba(0,0,0,.45); padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; }
   </style>
-
-  <!-- ADDED: gentle floating component (doesn't touch scale or other logic) -->
-  <script>
-    AFRAME.registerComponent('floaty', {
-      schema: {
-        amp:   {type: 'number', default: 0.12}, // ύψος ταλάντωσης (m)
-        speed: {type: 'number', default: 0.8},  // ταχύτητα ταλάντωσης
-        roll:  {type: 'number', default: 1.5},  // ελαφρύ roll γύρω από Ζ (deg)
-        yaw:   {type: 'number', default: 3.0}   // ελαφρύ yaw γύρω από Υ (deg)
-      },
-      init() { this.baseY = null; },
-      tick(time){
-        const o = this.el.object3D;
-        if (this.baseY === null) this.baseY = o.position.y;
-        const t = time / 1000;
-        // πάνω-κάτω γύρω από το αρχικό Y (δεν αλλάζουμε scale)
-        o.position.y = this.baseY + Math.sin(t * this.data.speed) * this.data.amp;
-        // μικρές φυσικές ταλαντώσεις
-        const deg = THREE.MathUtils.degToRad;
-        o.rotation.z = deg(Math.sin(t * 0.6) * this.data.roll);
-        o.rotation.y = deg(Math.sin(t * 0.3) * this.data.yaw);
-      }
-    });
-  </script>
-  <!-- /ADDED -->
 </head>
 <body>
   <div class="hud">
@@ -183,10 +158,6 @@
       e.setAttribute('shrink-on-load', 's:0.002');        // keep current scale
       e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
       e.setAttribute('position', `${x} ${y} ${z}`);
-
-      /* ADDED: make it float gently (no other changes) */
-      e.setAttribute('floaty', 'amp:0.10; speed:0.9; roll:1.2; yaw:2.5');
-
       parent.appendChild(e);
 
       setStatus('Bottle spawned — collect it to gain +10%!');
