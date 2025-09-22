@@ -83,7 +83,7 @@
       this.halfD = (oceanData.depth || 50) / 2 - 2;
 
       // Survival meter
-      this.survival = 50;            // starts at 50%
+      this.survival = 100;           // starts at 100%
       setMeter(this.survival);
       this.decayTimer = setInterval(() => {
         if (!this.isGameOver) this.adjustSurvival(-10);   // -10% every 5s
