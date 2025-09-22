@@ -94,25 +94,19 @@
       cam.removeAttribute('look-controls');
     },
     spawnCollectibles(n){
-      const parent = document.getElementById('collectibles');
-      for (let i = 0; i < n; i++){
-  const e = document.createElement('a-entity');
-  e.setAttribute('collectible','');
+      const e = document.createElement('a-entity');
+e.setAttribute('collectible','');
+e.setAttribute('gltf-model', '#bottleGLTF');
+e.setAttribute('scale', '1.2 1.2 1.2');      // άλλαξέ το όπως θες
+e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
+e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
+e.addEventListener('model-loaded', () => setStatus('Bottle model loaded ✔'));
+e.addEventListener('model-error', (ev) => {
+  console.error('Bottle failed:', ev.detail?.src || ev.detail);
+  setStatus('Bottle failed — check path/console.');
+});
+parent.appendChild(e);
 
-  // Προ-φορτωμένο μοντέλο
-  e.setAttribute('gltf-model', '#bottleGLTF');
-
-  // Μεγαλύτερο & πάνω από τα κύματα για δοκιμή
-  e.setAttribute('scale', '1.2 1.2 1.2'); // δοκίμασε 2 2 2 αν δεν φαίνεται
-  e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
-  e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
-
-  // (προαιρετικό) logs
-  e.addEventListener('model-loaded', () => setStatus('Bottle model loaded ✔'));
-  e.addEventListener('model-error', (ev) => {
-    console.error('Bottle failed to load:', ev.detail?.src || ev.detail);
-    setStatus('Bottle failed to load — check path/console.');
-  });
 
   parent.appendChild(e); // ✅ απαραίτητο
 }
