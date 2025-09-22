@@ -121,15 +121,17 @@
       const e = document.createElement('a-entity');
 e.setAttribute('collectible','');
 e.setAttribute('gltf-model', '#bottleGLTF');
-e.setAttribute('scale', '0.3 0.3 0.3'); // μικρότερο από το debug
-      // άλλαξέ το όπως θες
 e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
 e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
+// αυτόματο μέγεθος & ύψος
+e.setAttribute('autoscale-to-height', 'h: 0.35; y: 1.2');
+
 e.addEventListener('model-loaded', () => setStatus('Bottle model loaded ✔'));
 e.addEventListener('model-error', (ev) => {
-  console.error('Bottle failed:', ev.detail?.src || ev.detail);
-  setStatus('Bottle failed — check path/console.');
+  console.error('Bottle failed to load:', ev.detail?.src || ev.detail);
+  setStatus('Bottle failed to load — check path/console.');
 });
+
 parent.appendChild(e);
 
 
