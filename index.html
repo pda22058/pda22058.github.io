@@ -69,6 +69,30 @@
   const statusEl = document.getElementById('status');
   function setStatus(t){ statusEl.textContent = 'Status: ' + t; }
 
+  AFRAME.registerComponent('autoscale-to-height', {
+  schema: { h: {default: 0.35}, y: {default: 1.2} }, // h = στόχος ύψους (m), y = ύψος από θάλασσα
+  init() {
+    const apply = () => {
+      const mesh = this.el.getObject3D('mesh');
+      if (!mesh) return;
+      const box = new THREE.Box3().setFromObject(mesh);
+      const size = new THREE.Vector3(); box.getSize(size);
+      if (size.y > 0) {
+        const s = this.data.h / size.y;          // uniform scale ώστε το ύψος να γίνει h
+        this.el.object3D.scale.setScalar(s);
+      }
+      // κράτα το μπουκάλι πάνω από τα κύματα
+      const p = this.el.getAttribute('position');
+      this.el.setAttribute('position', {x: p.x, y: this.data.y, z: p.z});
+    };
+    // όταν φορτώσει το GLTF, εφάρμοσε κλίμακα/ύψος
+    this.el.addEventListener('model-loaded', apply);
+    // αν ήδη έχει φορτώσει
+    if (this.el.getObject3D('mesh')) apply();
+  }
+});
+
+
   AFRAME.registerComponent('game-manager', {
     init(){
       this.isGameOver = false;
