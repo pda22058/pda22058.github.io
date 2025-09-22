@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+thanks now this is my script keep it as it is: <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -43,7 +43,7 @@
 
     <!-- Player rig (lower if you want easier collection) -->
     <a-entity id="rig" position="0 0.7 0">
-      <a-entity id="player" camera look-controls wasd-controls="acceleration: 8" position="0 -0.3 0"></a-entity>
+      <a-entity id="player" camera look-controls wasd-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
     <!-- Single-bottle container -->
@@ -67,41 +67,6 @@
       const apply = () => this.el.object3D.scale.setScalar(this.data.s);
       if (this.el.getObject3D('mesh')) apply();
       this.el.addEventListener('model-loaded', apply, {once:true});
-    }
-  });
-
-  /* NEW: gentle floating/bobbing + slight tilt, like it’s on water */
-  AFRAME.registerComponent('floaty', {
-    schema: {
-      ampY:   {default: 0.06},   // vertical bob (meters)
-      ampXZ:  {default: 0.02},   // tiny horizontal drift (meters)
-      tilt:   {default: 3},      // tilt amplitude (degrees)
-      speed:  {default: 0.25}    // cycles per second (0.25 = 4s per cycle)
-    },
-    init(){
-      this._t0 = performance.now() * 0.001 + Math.random()*Math.PI*2; // random phase
-      this._basePos = this.el.object3D.position.clone();
-      this._baseRot = this.el.object3D.rotation.clone();
-      this._TAU = Math.PI * 2;
-      this._d2r = Math.PI / 180;
-    },
-    tick(){
-      const t = (performance.now()*0.001 - this._t0) * this.data.speed;
-      const s = Math.sin(t * this._TAU);
-      const c = Math.cos(t * this._TAU);
-
-      // Position: bob on Y, tiny lazy circle in XZ
-      const x = this._basePos.x + c * this.data.ampXZ;
-      const y = this._basePos.y + s * this.data.ampY;
-      const z = this._basePos.z + s * this.data.ampXZ;
-
-      // Rotation: gentle roll/pitch, keep Y (heading) unchanged
-      const rx = this._baseRot.x + (s * this.data.tilt * 0.5) * this._d2r;
-      const ry = this._baseRot.y; // don’t fight your random Y heading
-      const rz = this._baseRot.z + (c * this.data.tilt) * this._d2r;
-
-      this.el.object3D.position.set(x, y, z);
-      this.el.object3D.rotation.set(rx, ry, rz);
     }
   });
 
@@ -191,7 +156,6 @@
       e.setAttribute('collectible','');                   // collision logic
       e.setAttribute('gltf-model', '#bottleGLTF');        // your model
       e.setAttribute('shrink-on-load', 's:0.002');        // keep current scale
-      e.setAttribute('floaty', 'ampY:0.06; ampXZ:0.02; tilt:3; speed:0.25');  <!-- NEW -->
       e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
       e.setAttribute('position', `${x} ${y} ${z}`);
       parent.appendChild(e);
@@ -257,4 +221,36 @@
       ring.setAttribute('geometry','primitive: torus; radius: 5.0; radiusTubular: 0.05; arc: 360');
       ring.setAttribute('material','color:#ff2b2b; emissive:#a10000; emissiveIntensity:0.6');
       ring.setAttribute('rotation','90 0 0');
-      ring.setAttribute('animation','property: material.emi
+      ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
+      this.el.appendChild(ring);
+
+      const disk = document.createElement('a-entity');
+      disk.setAttribute('geometry','primitive: circle; radius: 4.8');
+      disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
+      disk.setAttribute('rotation','-90 0 0');
+      this.el.appendChild(disk);
+
+      this.start = performance.now();
+      this.player = document.querySelector('#rig');
+      this.game = document.querySelector('#game').components['game-manager'];
+      setStatus('Target appeared! Move away!');
+    },
+    tick(){
+      if(this.game.isGameOver) return;
+      const now = performance.now();
+      if(now - this.start >= this.data.deadline){
+        const p = new THREE.Vector3();
+        const q = new THREE.Vector3();
+        this.el.object3D.getWorldPosition(p);
+        this.player.object3D.getWorldPosition(q);
+        if(p.distanceTo(q) < this.data.hitRadius){
+          this.game.gameOver();
+        }
+        this.el.parentNode && this.el.parentNode.removeChild(this.el);
+        setStatus('Safe for now…');
+      }
+    }
+  });
+  </script>
+</body>
+</html>
