@@ -127,9 +127,8 @@
       const e = document.createElement('a-entity');
 e.setAttribute('collectible','');
 e.setAttribute('gltf-model', '#bottleGLTF');
-
-// 🔽 tiny but visible; adjust if needed
-e.setAttribute('scale', '0.003 0.003 0.003');
+e.setAttribute('force-scale', 's: 0.003');
+e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
 e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
 e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
 
