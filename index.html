@@ -30,6 +30,13 @@
       <a-asset-item id="bottleGLTF" src="assets/models/miltary_water_bottle/scene.gltf"></a-asset-item>
     </a-assets>
 
+    <!-- DEBUG: one visible bottle in front of the camera -->
+  <a-entity id="debugBottle"
+            position="0 1.5 -3"
+            scale="2 2 2"
+            rotation="0 0 0"
+            gltf-model="#bottleGLTF"></a-entity>
+
     <!-- Rain effect -->
     <a-entity id="rain" particle-system="preset: rain; color: #aee7ff; particleCount: 20"></a-entity>
 
