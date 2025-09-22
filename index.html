@@ -191,32 +191,36 @@
     }
   });
 
-  AFRAME.registerComponent('target-spawner',{
-    schema:{ intervalMin:{default:4000}, intervalMax:{default:7000}, radius:{default:25} },
-    init(){
-      this.player = document.querySelector('#rig');
-      this.game = document.querySelector('#game').components['game-manager'];
-      this.timer = 0; this.nextAt = this.nextInterval();
-    },
-    nextInterval(){ return randRange(this.data.intervalMin, this.data.intervalMax); },
-    tick(time,dt){
-      if(this.game.isGameOver) return;
-      this.timer += dt;
-      if(this.timer >= this.nextAt){
-        this.timer = 0; this.nextAt = this.nextInterval();
-        this.spawnTarget();
-      }
-    },
-    spawnTarget(){
-      const x = randRange(-this.data.radius, this.data.radius);
-      const z = randRange(-this.data.radius, this.data.radius);
-      const y = 0.05;
-      const t = document.createElement('a-entity');
-      t.setAttribute('position', `${x} ${y} ${z}`);
-      t.setAttribute('target-marker','deadline: 3000');
-      this.el.sceneEl.appendChild(t);
+  <script>
+AFRAME.registerComponent('target-spawner',{
+  schema:{ intervalMin:{default:4000}, intervalMax:{default:7000}, radius:{default:25} },
+  init(){
+    this.player = document.querySelector('#rig');
+    this.game = document.querySelector('#game').components['game-manager'];
+    this.timer = 0; this.nextAt = this.nextInterval();
+  },
+  nextInterval(){ return Math.random()*(this.data.intervalMax - this.data.intervalMin) + this.data.intervalMin; },
+  tick(time,dt){
+    if(this.game.isGameOver) return;
+    this.timer += dt;
+    if(this.timer >= this.nextAt){
+      this.timer = 0; 
+      this.nextAt = this.nextInterval();
+      // ⬇️ Spawn TWO targets at once
+      this.spawnTarget();
+      this.spawnTarget();
     }
-  });
+  },
+  spawnTarget(){
+    const x = Math.random()*(2*this.data.radius) - this.data.radius;
+    const z = Math.random()*(2*this.data.radius) - this.data.radius;
+    const y = 0.05;
+    const t = document.createElement('a-entity');
+    t.setAttribute('position', `${x} ${y} ${z}`);
+    t.setAttribute('target-marker','deadline: 3000'); // same visuals (ring + filled disk) + hit logic
+    this.el.sceneEl.appendChild(t);
+  }
+});
 
   AFRAME.registerComponent('target-marker',{
     schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
