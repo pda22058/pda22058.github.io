@@ -26,13 +26,15 @@
   <a-scene>
     <!-- ASSETS: correct path to your folder -->
     <a-assets timeout="30000">
-  <a-asset-item id="bottleGLTF" src="./assets/models/military_water_bottle/scene.gltf"></a-asset-item>
-</a-assets>
+      <a-asset-item id="bottleGLTF" src="./assets/models/military_water_bottle/scene.gltf"></a-asset-item>
+    </a-assets>
 
-
-   <a-entity id="debugBottle" gltf-model="#bottleGLTF"
-          position="0 1.5 -3" force-scale="s: 0.003"></a-entity>
-
+    <!-- DEBUG bottle (remove later) -->
+    <a-entity id="debugBottle"
+              position="0 1.5 -3"
+              rotation="0 0 0"
+              gltf-model="#bottleGLTF"
+              shrink-on-load="s: 0.0006"></a-entity>
 
     <!-- Rain effect -->
     <a-entity id="rain" particle-system="preset: rain; color: #aee7ff; particleCount: 20"></a-entity>
@@ -66,38 +68,15 @@
   const statusEl = document.getElementById('status');
   function setStatus(t){ statusEl.textContent = 'Status: ' + t; }
 
-  AFRAME.registerComponent('autoscale-to-height', {
-  schema: { h: {default: 0.35}, y: {default: 1.2} }, // h = στόχος ύψους (m), y = ύψος από θάλασσα
-  init() {
-    const apply = () => {
-      const mesh = this.el.getObject3D('mesh');
-      if (!mesh) return;
-      const box = new THREE.Box3().setFromObject(mesh);
-      const size = new THREE.Vector3(); box.getSize(size);
-      if (size.y > 0) {
-        const s = this.data.h / size.y;          // uniform scale ώστε το ύψος να γίνει h
-        this.el.object3D.scale.setScalar(s);
-      }
-      // κράτα το μπουκάλι πάνω από τα κύματα
-      const p = this.el.getAttribute('position');
-      this.el.setAttribute('position', {x: p.x, y: this.data.y, z: p.z});
-    };
-    // όταν φορτώσει το GLTF, εφάρμοσε κλίμακα/ύψος
-    this.el.addEventListener('model-loaded', apply);
-    // αν ήδη έχει φορτώσει
-    if (this.el.getObject3D('mesh')) apply();
-  }
-});
-
-    AFRAME.registerComponent('force-scale', {
-  schema: { s: {default: 0.003} },
-  init() {
-    const apply = () => this.el.object3D.scale.setScalar(this.data.s);
-    this.el.addEventListener('model-loaded', apply, {once:true});
-    if (this.el.getObject3D('mesh')) apply();
-  }
-});
-
+  /* Force tiny size after GLTF loads (robust against internal transforms) */
+  AFRAME.registerComponent('shrink-on-load', {
+    schema: { s: {default: 0.0006} },
+    init () {
+      const apply = () => this.el.object3D.scale.setScalar(this.data.s);
+      if (this.el.getObject3D('mesh')) apply();
+      this.el.addEventListener('model-loaded', apply, {once:true});
+    }
+  });
 
   AFRAME.registerComponent('game-manager', {
     init(){
@@ -124,20 +103,18 @@
       cam.removeAttribute('look-controls');
     },
     spawnCollectibles(n){
-      const e = document.createElement('a-entity');
-e.setAttribute('collectible','');
-e.setAttribute('gltf-model', '#bottleGLTF');
-e.setAttribute('force-scale', 's: 0.003');
-e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
-e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
-
-parent.appendChild(e);
-
-
-
-  parent.appendChild(e); // ✅ απαραίτητο
-}
-
+      const parent = document.getElementById('collectibles');
+      for (let i = 0; i < n; i++){
+        const e = document.createElement('a-entity');
+        e.setAttribute('collectible','');
+        e.setAttribute('gltf-model', '#bottleGLTF');
+        e.setAttribute('shrink-on-load', 's: 0.0006');      // ← tiny, reliable
+        e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
+        e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
+        parent.appendChild(e);
+      }
+    }
+  });
 
   // Bottle disappears on camera touch
   AFRAME.registerComponent('collectible',{
