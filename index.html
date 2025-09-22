@@ -97,7 +97,8 @@
       const e = document.createElement('a-entity');
 e.setAttribute('collectible','');
 e.setAttribute('gltf-model', '#bottleGLTF');
-e.setAttribute('scale', '1.2 1.2 1.2');      // άλλαξέ το όπως θες
+e.setAttribute('scale', '0.3 0.3 0.3'); // μικρότερο από το debug
+      // άλλαξέ το όπως θες
 e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
 e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
 e.addEventListener('model-loaded', () => setStatus('Bottle model loaded ✔'));
