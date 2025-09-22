@@ -125,7 +125,7 @@
 
       const x = randRange(-this.halfW, this.halfW);
       const z = randRange(-this.halfD, this.halfD);
-      const y = 0.2; // above waves
+      const y = 0.1; // above waves
 
       const e = document.createElement('a-entity');
       e.setAttribute('collectible','');                   // collision logic
@@ -141,7 +141,7 @@
 
   // Bottle disappears on camera touch + notify manager to spawn next
   AFRAME.registerComponent('collectible',{
-    schema:{ radius:{default:0.85} },
+    schema:{ radius:{default:1.1} },
     init(){
       this.player = document.querySelector('#player');
       this._removed = false;
