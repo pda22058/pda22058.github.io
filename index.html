@@ -20,6 +20,7 @@
   <div class="hud">
     <div class="pill">WASD to move • Mouse to look • Enter VR if supported</div>
     <div class="pill">Avoid the glowing red circles. Stay safe!</div>
+    <div id="meter" class="pill">Survival: 50%</div> <!-- NEW -->
     <div id="status" class="pill">Status: Ready</div>
   </div>
 
@@ -40,9 +41,9 @@
     <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
     <a-entity light="type: ambient; color: #888"></a-entity>
 
-    <!-- Player rig -->
+    <!-- Player rig (lower if you want easier collection) -->
     <a-entity id="rig" position="0 0.6 0">
-      <a-entity id="player" camera look-controls wasd-controls></a-entity>
+      <a-entity id="player" camera look-controls wasd-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
     <!-- Single-bottle container -->
@@ -55,7 +56,9 @@
   <script>
   function randRange(min,max){ return Math.random()*(max-min)+min; }
   const statusEl = document.getElementById('status');
+  const meterEl = document.getElementById('meter');
   function setStatus(t){ statusEl.textContent = 'Status: ' + t; }
+  function setMeter(v){ meterEl.textContent = 'Survival: ' + Math.round(v) + '%'; }
 
   /* Keep your existing bottle size (do not change s unless you want a different size) */
   AFRAME.registerComponent('shrink-on-load', {
@@ -79,20 +82,39 @@
       this.halfW = (oceanData.width || 50) / 2 - 2;
       this.halfD = (oceanData.depth || 50) / 2 - 2;
 
-      this.isSpawning = false;   // debounce guard
+      // Survival meter
+      this.survival = 50;            // starts at 50%
+      setMeter(this.survival);
+      this.decayTimer = setInterval(() => {
+        if (!this.isGameOver) this.adjustSurvival(-10);   // -10% every 5s
+      }, 5000);
 
-      // When a bottle is collected, spawn the next ONLY if none exists
-      window.addEventListener('bottle-collected', () => this.spawnIfNone());
+      // Bottle events
+      this.isSpawning = false;
+      window.addEventListener('bottle-collected', () => {
+        this.adjustSurvival(+10);     // +10% on collect
+        this.spawnIfNone();           // respawn next bottle
+      });
 
       // Start with exactly one bottle
       this.spawnIfNone();
     },
 
+    adjustSurvival(delta){
+      if (this.isGameOver) return;
+      this.survival = Math.max(0, Math.min(100, this.survival + delta));
+      setMeter(this.survival);
+      if (this.survival <= 0){
+        setStatus('Energy depleted.');
+        this.gameOver();
+      }
+    },
+
     spawnIfNone(){
+      if (this.isGameOver) return;
       const parent = document.getElementById('collectibles');
       if (this.isSpawning || parent.childElementCount > 0) return;
       this.isSpawning = true;
-      // small timeout to avoid race with removal tick
       setTimeout(() => {
         this.spawnOneBottle();
         this.isSpawning = false;
@@ -110,22 +132,25 @@
     gameOver(){
       if(this.isGameOver) return;
       this.isGameOver = true;
-      setStatus('You were hit by a hazard!');
+      setStatus('Game Over');
+      if (this.decayTimer) { clearInterval(this.decayTimer); this.decayTimer = null; }
       this.black.style.opacity = '1';
       const cam = document.getElementById('player');
       cam.removeAttribute('wasd-controls');
       cam.removeAttribute('look-controls');
+      // Optional: clear bottle
+      const parent = document.getElementById('collectibles');
+      while (parent.firstChild) parent.removeChild(parent.firstChild);
     },
 
     spawnOneBottle(){
+      if (this.isGameOver) return;
       const parent = document.getElementById('collectibles');
-
-      // Ensure container is empty (single bottle rule)
       while (parent.firstChild) parent.removeChild(parent.firstChild);
 
       const x = randRange(-this.halfW, this.halfW);
       const z = randRange(-this.halfD, this.halfD);
-      const y = 0.1; // above waves
+      const y = 0.6; // lower above waves (tweak if needed)
 
       const e = document.createElement('a-entity');
       e.setAttribute('collectible','');                   // collision logic
@@ -135,13 +160,13 @@
       e.setAttribute('position', `${x} ${y} ${z}`);
       parent.appendChild(e);
 
-      setStatus('Bottle spawned — find and collect it!');
+      setStatus('Bottle spawned — collect it to gain +10%!');
     }
   });
 
   // Bottle disappears on camera touch + notify manager to spawn next
   AFRAME.registerComponent('collectible',{
-    schema:{ radius:{default:1.1} },
+    schema:{ radius:{default:0.75} }, // a bit wider for easier pickup with low camera
     init(){
       this.player = document.querySelector('#player');
       this._removed = false;
@@ -154,11 +179,10 @@
       this.player.object3D.getWorldPosition(this._q);
       if (this._p.distanceTo(this._q) < this.data.radius){
         this._removed = true;
-        // remove first, then notify
         const parent = this.el.parentNode;
         parent && parent.removeChild(this.el);
         window.dispatchEvent(new CustomEvent('bottle-collected'));
-        setStatus('Collected a bottle! Spawning the next…');
+        setStatus('Collected! +10%');
       }
     }
   });
@@ -201,7 +225,7 @@
       this.el.appendChild(ring);
 
       const disk = document.createElement('a-entity');
-      disk.setAttribute('geometry','primitive: circle; radius: 4.8');
+      disk.setAttribute('geometry','primitive: circle; radius: 0.8');
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
       disk.setAttribute('rotation','-90 0 0');
       this.el.appendChild(disk);
