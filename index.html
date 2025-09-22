@@ -34,7 +34,7 @@
           position="0 1.2 -3"
           rotation="0 0 0"
           gltf-model="#bottleGLTF"
-          autoscale-to-height="h: 0.35; y: 1.2"></a-entity>
+          autoscale-to-height="h: 0.05; y: 1.2"></a-entity>
 
 
     <!-- Rain effect -->
@@ -124,7 +124,7 @@ e.setAttribute('gltf-model', '#bottleGLTF');
 e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
 e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
 // αυτόματο μέγεθος & ύψος
-e.setAttribute('autoscale-to-height', 'h: 0.35; y: 1.2');
+e.setAttribute('autoscale-to-height', 'h: 0.05; y: 1.2');
 
 e.addEventListener('model-loaded', () => setStatus('Bottle model loaded ✔'));
 e.addEventListener('model-error', (ev) => {
