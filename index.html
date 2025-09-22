@@ -24,17 +24,10 @@
   </div>
 
   <a-scene>
-    <!-- ASSETS: correct path to your folder -->
+    <!-- ASSETS -->
     <a-assets timeout="30000">
       <a-asset-item id="bottleGLTF" src="./assets/models/military_water_bottle/scene.gltf"></a-asset-item>
     </a-assets>
-
-    <!-- DEBUG bottle (to test size/position) -->
-    <a-entity id="debugBottle"
-              position="0 1.5 -3"
-              rotation="0 0 0"
-              gltf-model="#bottleGLTF">
-    </a-entity>
 
     <!-- Rain effect -->
     <a-entity id="rain" particle-system="preset: rain; color: #aee7ff; particleCount: 20"></a-entity>
@@ -55,7 +48,7 @@
       <a-entity id="player" camera look-controls wasd-controls></a-entity>
     </a-entity>
 
-    <!-- Bottle collectibles -->
+    <!-- Bottle (single) container -->
     <a-entity id="collectibles"></a-entity>
 
     <!-- Target spawner controller -->
@@ -64,33 +57,45 @@
 
   <script>
   function randRange(min,max){ return Math.random()*(max-min)+min; }
+
   const statusEl = document.getElementById('status');
   function setStatus(t){ statusEl.textContent = 'Status: ' + t; }
 
-  /* Force tiny size AFTER GLTF loads */
+  /* Force tiny size AFTER GLTF loads (kept as-is; do not change scale here) */
   AFRAME.registerComponent('shrink-on-load', {
-    schema: { s: {default: 0.002} }, // adjust this value to get right size
+    schema: { s: {default: 0.002} }, // <-- unchanged
     init () {
       const apply = () => {
         this.el.object3D.scale.setScalar(this.data.s);
-        console.log('Scaled bottle to', this.data.s);
       };
       if (this.el.getObject3D('mesh')) apply();
       this.el.addEventListener('model-loaded', apply, {once:true});
     }
   });
 
-  // Apply shrink-on-load to the debug bottle
-  document.querySelector('#debugBottle').setAttribute('shrink-on-load', 's:0.002');
-
   AFRAME.registerComponent('game-manager', {
     init(){
       this.isGameOver = false;
-      this.collected = 0;
       this.player = document.querySelector('#rig');
       this.black = this.makeOverlay();
-      this.spawnCollectibles(7);
+
+      // Ocean bounds for random placement inside width/depth
+      const oceanEl = document.getElementById('ocean');
+      const oceanData = oceanEl ? oceanEl.getAttribute('ocean') || {} : {};
+      const width = oceanData.width || 50;
+      const depth = oceanData.depth || 50;
+      this.halfW = width / 2 - 2;  // small margin from edges
+      this.halfD = depth / 2 - 2;
+
+      // Listen for collection event to respawn the next bottle
+      window.addEventListener('bottle-collected', () => {
+        this.spawnOneBottle();
+      });
+
+      // Spawn the first (and only) bottle
+      this.spawnOneBottle();
     },
+
     makeOverlay(){
       const o = document.createElement('div');
       o.style.cssText = 'position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .6s;display:flex;align-items:center;justify-content:center;color:#fff;font:700 42px/1.1 system-ui;letter-spacing:.5px;z-index:20';
@@ -98,6 +103,7 @@
       document.body.appendChild(o);
       return o;
     },
+
     gameOver(){
       if(this.isGameOver) return;
       this.isGameOver = true;
@@ -107,21 +113,30 @@
       cam.removeAttribute('wasd-controls');
       cam.removeAttribute('look-controls');
     },
-    spawnCollectibles(n){
+
+    // Spawn exactly ONE bottle at a random spot inside the ocean extents
+    spawnOneBottle(){
       const parent = document.getElementById('collectibles');
-      for (let i = 0; i < n; i++){
-        const e = document.createElement('a-entity');
-        e.setAttribute('collectible','');
-        e.setAttribute('gltf-model', '#bottleGLTF');
-        e.setAttribute('shrink-on-load', 's:0.002'); // same shrink
-        e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
-        e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
-        parent.appendChild(e);
-      }
+      // Clear any leftover children to guarantee single bottle
+      while (parent.firstChild) parent.removeChild(parent.firstChild);
+
+      const x = randRange(-this.halfW, this.halfW);
+      const z = randRange(-this.halfD, this.halfD);
+      const y = 1.2; // keep above waves
+
+      const e = document.createElement('a-entity');
+      e.setAttribute('collectible','');                   // collision/collection logic
+      e.setAttribute('gltf-model', '#bottleGLTF');        // your model
+      e.setAttribute('shrink-on-load', 's:0.002');        // keep current scale (unchanged)
+      e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
+      e.setAttribute('position', `${x} ${y} ${z}`);
+
+      parent.appendChild(e);
+      setStatus('Bottle spawned — find and collect it!');
     }
   });
 
-  // Bottle disappears on camera touch
+  // Bottle disappears on camera touch + notify manager to spawn next
   AFRAME.registerComponent('collectible',{
     schema:{ radius:{default:0.55} },
     init(){
@@ -136,9 +151,11 @@
       this.player.object3D.getWorldPosition(this._q);
       if (this._p.distanceTo(this._q) < this.data.radius){
         this._removed = true;
-        this.el.setAttribute('visible','false');
+        // Announce collection (manager listens and spawns a new one)
+        window.dispatchEvent(new CustomEvent('bottle-collected'));
+        // Remove current bottle
         this.el.parentNode && this.el.parentNode.removeChild(this.el);
-        setStatus('Collected a bottle!');
+        setStatus('Collected a bottle! Spawning the next…');
       }
     }
   });
