@@ -92,6 +92,15 @@
   }
 });
 
+    AFRAME.registerComponent('force-scale', {
+  schema: { s: {default: 0.003} },
+  init() {
+    const apply = () => this.el.object3D.scale.setScalar(this.data.s);
+    this.el.addEventListener('model-loaded', apply, {once:true});
+    if (this.el.getObject3D('mesh')) apply();
+  }
+});
+
 
   AFRAME.registerComponent('game-manager', {
     init(){
