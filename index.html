@@ -121,18 +121,14 @@
       const e = document.createElement('a-entity');
 e.setAttribute('collectible','');
 e.setAttribute('gltf-model', '#bottleGLTF');
+
+// 🔽 tiny but visible; adjust if needed
+e.setAttribute('scale', '0.003 0.003 0.003');
 e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
 e.setAttribute('position', `${randRange(-20,20)} 1.2 ${randRange(-20,20)}`);
-// αυτόματο μέγεθος & ύψος
-e.setAttribute('autoscale-to-height', 'h: 0.05; y: 1.2');
-
-e.addEventListener('model-loaded', () => setStatus('Bottle model loaded ✔'));
-e.addEventListener('model-error', (ev) => {
-  console.error('Bottle failed to load:', ev.detail?.src || ev.detail);
-  setStatus('Bottle failed to load — check path/console.');
-});
 
 parent.appendChild(e);
+
 
 
   parent.appendChild(e); // ✅ απαραίτητο
