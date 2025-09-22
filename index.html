@@ -43,7 +43,11 @@ thanks now this is my script keep it as it is: <!DOCTYPE html>
 
     <!-- Player rig (lower if you want easier collection) -->
     <a-entity id="rig" position="0 0.7 0">
-      <a-entity id="player" camera look-controls wasd-controls position="0 -0.3 0"></a-entity>
+      <a-entity id="player"
+          camera
+          look-controls
+          wasd-controls="acceleration: 8"   <!-- default ~65; try 20, 15, 10 -->
+          position="0 -0.3 0"></a-entity>
     </a-entity>
 
     <!-- Single-bottle container -->
