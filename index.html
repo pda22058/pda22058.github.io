@@ -43,18 +43,14 @@
 
     <!-- Player rig (lower if you want easier collection) -->
     <a-entity id="rig" position="0 0.7 0">
-      <a-entity id="player"
-          camera
-          look-controls
-          wasd-controls="acceleration: 8"   <!-- default ~65; try 20, 15, 10 -->
-          position="0 -0.3 0"></a-entity>
+      <a-entity id="player" camera look-controls wasd-controls="acceleration: 8" position="0 -0.3 0"></a-entity>
     </a-entity>
 
     <!-- Single-bottle container -->
     <a-entity id="collectibles"></a-entity>
 
-    <!-- Target spawner controller -->
-    <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 25"></a-entity>
+    <!-- Target spawner controller (UPDATED: count 2, minSep 6) -->
+    <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 25; count: 2; minSep: 6"></a-entity>
   </a-scene>
 
   <script>
@@ -191,36 +187,52 @@
     }
   });
 
-  <script>
-AFRAME.registerComponent('target-spawner',{
-  schema:{ intervalMin:{default:4000}, intervalMax:{default:7000}, radius:{default:25} },
-  init(){
-    this.player = document.querySelector('#rig');
-    this.game = document.querySelector('#game').components['game-manager'];
-    this.timer = 0; this.nextAt = this.nextInterval();
-  },
-  nextInterval(){ return Math.random()*(this.data.intervalMax - this.data.intervalMin) + this.data.intervalMin; },
-  tick(time,dt){
-    if(this.game.isGameOver) return;
-    this.timer += dt;
-    if(this.timer >= this.nextAt){
-      this.timer = 0; 
+  /* UPDATED: spawn multiple targets at once with separation */
+  AFRAME.registerComponent('target-spawner',{
+    schema:{
+      intervalMin:{default:4000},
+      intervalMax:{default:7000},
+      radius:{default:25},
+      count:{default:2},        // how many targets per spawn
+      minSep:{default:6},       // minimum distance between targets (m)
+      deadline:{default:3000}   // pass-through to target-marker
+    },
+    init(){
+      this.player = document.querySelector('#rig');
+      this.game = document.querySelector('#game').components['game-manager'];
+      this.timer = 0;
       this.nextAt = this.nextInterval();
-      // ⬇️ Spawn TWO targets at once
-      this.spawnTarget();
-      this.spawnTarget();
+    },
+    nextInterval(){
+      return Math.random()*(this.data.intervalMax - this.data.intervalMin) + this.data.intervalMin;
+    },
+    tick(time,dt){
+      if(this.game.isGameOver) return;
+      this.timer += dt;
+      if(this.timer >= this.nextAt){
+        this.timer = 0;
+        this.nextAt = this.nextInterval();
+        this.spawnTargets();
+      }
+    },
+    spawnTargets(){
+      const positions = [];
+      let tries = 0;
+      while (positions.length < this.data.count && tries < 50){
+        const x = Math.random()*(2*this.data.radius) - this.data.radius;
+        const z = Math.random()*(2*this.data.radius) - this.data.radius;
+        const ok = positions.every(p => Math.hypot(p.x - x, p.z - z) >= this.data.minSep);
+        if (ok) positions.push({x,z});
+        tries++;
+      }
+      positions.forEach(p=>{
+        const t = document.createElement('a-entity');
+        t.setAttribute('position', `${p.x} 0.05 ${p.z}`);
+        t.setAttribute('target-marker', `deadline: ${this.data.deadline}`);
+        this.el.sceneEl.appendChild(t);
+      });
     }
-  },
-  spawnTarget(){
-    const x = Math.random()*(2*this.data.radius) - this.data.radius;
-    const z = Math.random()*(2*this.data.radius) - this.data.radius;
-    const y = 0.05;
-    const t = document.createElement('a-entity');
-    t.setAttribute('position', `${x} ${y} ${z}`);
-    t.setAttribute('target-marker','deadline: 3000'); // same visuals (ring + filled disk) + hit logic
-    this.el.sceneEl.appendChild(t);
-  }
-});
+  });
 
   AFRAME.registerComponent('target-marker',{
     schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
