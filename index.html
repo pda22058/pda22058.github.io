@@ -223,7 +223,7 @@
     }
   });
 
-  /* Target (kills on touch immediately). Spawns a shark at the same time. */
+  /* Target (kills on touch immediately). After deadline, spawns a shark there. */
   AFRAME.registerComponent('target-marker',{
     schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
     init(){
@@ -240,16 +240,6 @@
       disk.setAttribute('rotation','-90 0 0');
       this.el.appendChild(disk);
 
-      // ΝΕΟ: Δημιουργία καρχαρία ταυτόχρονα με τον κόκκινο κύκλο
-      const pos = this.el.getAttribute('position');
-      const shark = document.createElement('a-entity');
-      shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`);
-      shark.setAttribute('gltf-model', '#sharkGLTF');
-      shark.setAttribute('shrink-on-load', 's:2.1'); // Δοκιμαστική τιμή για μεγαλύτερο καρχαρία
-      shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
-      shark.setAttribute('shark-attack', 'rise:900; hold:600; fall:900; hitRadius:2.6; apexY:0.8'); // Ρύθμιση του ύψους
-      this.el.sceneEl.appendChild(shark);
-
       this.start = performance.now();
       this.player = document.querySelector('#rig');
       this.game = document.querySelector('#game').components['game-manager'];
@@ -259,7 +249,9 @@
     tick(){
       if(this.game.isGameOver || this.resolved) return;
 
-      // Αν ο παίκτης ακουμπήσει τον κόκκινο κύκλο, game over
+      const now = performance.now();
+
+      // If player touches the target at any time -> game over
       const p = new THREE.Vector3();
       const q = new THREE.Vector3();
       this.el.object3D.getWorldPosition(p);
@@ -268,6 +260,22 @@
         this.resolved = true;
         this.game.gameOver();
         return;
+      }
+
+      // Time to trigger shark?
+      if(now - this.start >= this.data.deadline){
+        this.resolved = true;
+        const pos = this.el.getAttribute('position'); // scene coords
+        const shark = document.createElement('a-entity');
+        shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`); // start below water
+        shark.setAttribute('gltf-model', '#sharkGLTF');
+        shark.setAttribute('shrink-on-load', 's:0.01');          // adjust if too big/small
+        shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
+        shark.setAttribute('shark-attack','rise:900; hold:600; fall:900; hitRadius:2.6');
+        this.el.sceneEl.appendChild(shark);
+
+        // remove the red marker once shark is spawned
+        this.el.parentNode && this.el.parentNode.removeChild(this.el);
       }
     }
   });
@@ -305,14 +313,14 @@
         const k = (t - rise - hold) / fall;
         y = apexY + (startY - apexY) * k;
       } else {
-        // Όταν ο καρχαρίας ολοκληρώσει την κίνησή του, αφαιρείται
+        // done — remove shark
         this.el.parentNode && this.el.parentNode.removeChild(this.el);
         return;
       }
 
       this.el.setAttribute('position', `${this.x} ${y} ${this.z}`);
 
-      // έλεγχος σύγκρουσης με τον παίκτη
+      // collision with player?
       const p = new THREE.Vector3();
       const q = new THREE.Vector3();
       this.el.object3D.getWorldPosition(p);
