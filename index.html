@@ -277,7 +277,7 @@
         const shark = document.createElement('a-entity');
         shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`); // start below water
         shark.setAttribute('gltf-model', '#sharkGLTF');
-        shark.setAttribute('shrink-on-load', 's:0.05');          // adjust if too big/small
+        shark.setAttribute('shrink-on-load', 's:0.8');          // adjust if too big/small
         shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
         shark.setAttribute('shark-attack','rise:900; hold:600; fall:900; hitRadius:2.6');
         this.el.sceneEl.appendChild(shark);
