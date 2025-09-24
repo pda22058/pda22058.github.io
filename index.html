@@ -232,43 +232,56 @@
   });
 
   /* Target (kills on touch immediately). After deadline, spawns a shark there. */
-  AFRAME.registerComponent('target-marker',{
-    schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
-    init(){
-      const ring = document.createElement('a-entity');
-      ring.setAttribute('geometry','primitive: torus; radius: 5.0; radiusTubular: 0.05; arc: 360');
-      ring.setAttribute('material','color:#ff2b2b; emissive:#a10000; emissiveIntensity:0.6');
-      ring.setAttribute('rotation','90 0 0');
-      ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
-      this.el.appendChild(ring);
+AFRAME.registerComponent('target-marker',{
+  schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
+  init(){
+    const ring = document.createElement('a-entity');
+    ring.setAttribute('geometry','primitive: torus; radius: 5.0; radiusTubular: 0.05; arc: 360');
+    ring.setAttribute('material','color:#ff2b2b; emissive:#a10000; emissiveIntensity:0.6');
+    ring.setAttribute('rotation','90 0 0');
+    ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
+    this.el.appendChild(ring);
 
-      const disk = document.createElement('a-entity');
-      disk.setAttribute('geometry','primitive: circle; radius: 4.8');
-      disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
-      disk.setAttribute('rotation','-90 0 0');
-      this.el.appendChild(disk);
+    const disk = document.createElement('a-entity');
+    disk.setAttribute('geometry','primitive: circle; radius: 4.8');
+    disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
+    disk.setAttribute('rotation','-90 0 0');
+    this.el.appendChild(disk);
 
-      this.start = performance.now();
-      this.player = document.querySelector('#rig');
-      this.game = document.querySelector('#game').components['game-manager'];
-      this.resolved = false;
-      setStatus('Target appeared! Move away!');
-    },
-    tick(){
-      if(this.game.isGameOver || this.resolved) return;
+    // ΝΕΟ: Δημιουργία καρχαρία ταυτόχρονα με τον κόκκινο κύκλο
+    const pos = this.el.getAttribute('position'); // scene coords
+    const shark = document.createElement('a-entity');
+    shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`); // start below water
+    shark.setAttribute('gltf-model', '#sharkGLTF');
+    shark.setAttribute('shrink-on-load', 's:0.01');         // adjust if too big/small
+    shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
+    shark.setAttribute('shark-attack','rise:900; hold:600; fall:900; hitRadius:2.6');
+    this.el.sceneEl.appendChild(shark);
 
-      const now = performance.now();
+    this.start = performance.now();
+    this.player = document.querySelector('#rig');
+    this.game = document.querySelector('#game').components['game-manager'];
+    this.resolved = false;
+    setStatus('Target appeared! Move away!');
+  },
+  tick(){
+    if(this.game.isGameOver || this.resolved) return;
 
-      // If player touches the target at any time -> game over
-      const p = new THREE.Vector3();
-      const q = new THREE.Vector3();
-      this.el.object3D.getWorldPosition(p);
-      this.player.object3D.getWorldPosition(q);
-      if(p.distanceTo(q) < this.data.hitRadius){
-        this.resolved = true;
-        this.game.gameOver();
-        return;
-      }
+    // Πλέον, μόνο ο έλεγχος για σύγκρουση με τον παίκτη παραμένει εδώ.
+    const p = new THREE.Vector3();
+    const q = new THREE.Vector3();
+    this.el.object3D.getWorldPosition(p);
+    this.player.object3D.getWorldPosition(q);
+    if(p.distanceTo(q) < this.data.hitRadius){
+      this.resolved = true;
+      this.game.gameOver();
+      return;
+    }
+    
+    // Επειδή ο καρχαρίας δημιουργείται πλέον στο init, δεν χρειάζεται αυτό το κομμάτι κώδικα:
+    // if(now - this.start >= this.data.deadline){ ... }
+  }
+});
 
       // Time to trigger shark?
       if(now - this.start >= this.data.deadline){
