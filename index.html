@@ -245,9 +245,9 @@
       const shark = document.createElement('a-entity');
       shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`);
       shark.setAttribute('gltf-model', '#sharkGLTF');
-      shark.setAttribute('shrink-on-load', 's:0.1'); // Δοκιμαστική τιμή για μεγαλύτερο καρχαρία
+      shark.setAttribute('shrink-on-load', 's:2.1'); // Δοκιμαστική τιμή για μεγαλύτερο καρχαρία
       shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
-      shark.setAttribute('shark-attack', 'rise:900; hold:600; fall:900; hitRadius:2.6; apexY:0.3'); // Ρύθμιση του ύψους
+      shark.setAttribute('shark-attack', 'rise:900; hold:600; fall:900; hitRadius:2.6; apexY:0.8'); // Ρύθμιση του ύψους
       this.el.sceneEl.appendChild(shark);
 
       this.start = performance.now();
