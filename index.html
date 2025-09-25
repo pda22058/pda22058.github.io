@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ocean Survival — A-Frame</title>
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v5.1.0/dist/aframe-physics-system.min.js"></script>
   <script src="https://unpkg.com/@c-frame/aframe-particle-system-component@1.2.x/dist/aframe-particle-system-component.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-simple-sun-sky@^1.2.2/simple-sun-sky.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.0/dist/aframe-extras.min.js"></script>
@@ -22,7 +23,7 @@
     <div id="status" class="pill">Status: Ready</div>
   </div>
 
-  <a-scene>
+    <a-scene physics="gravity: 0 0 0; debug: false"> 
     <a-assets timeout="30000">
       <a-asset-item id="bottleGLTF" src="./assets/models/military_water_bottle/scene.gltf"></a-asset-item>
       <a-asset-item id="sharkGLTF"  src="./assets/models/great_white_shark_attack_bite_animation_loop/scene.gltf"></a-asset-item>
@@ -44,20 +45,20 @@
     <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
     <a-entity light="type: ambient; color: #888"></a-entity>
 
-        <a-entity id="rig" position="0 0.7 0" 
-            movement-controls="speed: 0.2; constrainToBoundingBox: true" 
-            collision-detector="objects: #boundaries > a-box">
+                <a-entity id="rig" position="0 0.7 0" 
+            movement-controls="speed: 0.2; fly: true" 
+            kinematic-body="radius: 0.5; height: 1.4; mass: 5">
       <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
         <a-entity id="boundaries">
-                        <a-box collidable width="55" height="5" depth="5" position="0 0.5 27.5"
+                                    <a-box static-body width="55" height="5" depth="5" position="0 0.5 27.5"
              material="visible: false"></a-box>
-                        <a-box collidable width="55" height="5" depth="5" position="0 0.5 -27.5"
+                        <a-box static-body width="55" height="5" depth="5" position="0 0.5 -27.5"
              material="visible: false"></a-box>
-                        <a-box collidable width="5" height="5" depth="55" position="27.5 0.5 0"
+                        <a-box static-body width="5" height="5" depth="55" position="27.5 0.5 0"
              material="visible: false"></a-box>
-                        <a-box collidable width="5" height="5" depth="55" position="-27.5 0.5 0"
+                        <a-box static-body width="5" height="5" depth="55" position="-27.5 0.5 0"
              material="visible: false"></a-box>
     </a-entity>
     <a-entity id="collectibles"></a-entity>
@@ -143,8 +144,11 @@
       overlay.style.opacity = '1';
 
       const cam = document.getElementById('player');
-      cam.removeAttribute('wasd-controls');
-      cam.removeAttribute('look-controls');
+      // Using #rig here to remove controls from the main moving entity
+      const rig = document.getElementById('rig'); 
+      rig.removeAttribute('movement-controls');
+      rig.removeAttribute('look-controls'); // movement-controls and look-controls are on separate entities in your code, so we remove from where they are applied
+      cam.removeAttribute('look-controls'); 
       const parent = document.getElementById('collectibles');
       while (parent.firstChild) parent.removeChild(parent.firstChild);
     },
@@ -259,120 +263,4 @@
   AFRAME.registerComponent('target-marker',{
     schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
     init(){
-      const ring = document.createElement('a-entity');
-      ring.setAttribute('geometry','primitive: torus; radius: 5.0; radiusTubular: 0.05; arc: 360');
-      ring.setAttribute('material','color:#ff2b2b; emissive:#a10000; emissiveIntensity:0.6');
-      ring.setAttribute('rotation','90 0 0');
-      ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
-      this.el.appendChild(ring);
-
-      const disk = document.createElement('a-entity');
-      disk.setAttribute('geometry','primitive: circle; radius: 4.8');
-      disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
-      disk.setAttribute('rotation','90 0 0'); // <-- CORRECTION: Rotation for the inner circle disk
-      this.el.appendChild(disk);
-
-      this.start = performance.now();
-      this.player = document.querySelector('#rig');
-      this.game = document.querySelector('#game').components['game-manager'];
-      this.resolved = false;
-      setStatus('Target appeared! Move away!');
-    },
-    tick(){
-      if(this.game.isGameOver || this.resolved) return;
-
-      const now = performance.now();
-
-      // Time to trigger shark?
-      if(now - this.start >= this.data.deadline){
-        this.resolved = true;
-        const pos = this.el.getAttribute('position'); // scene coords
-        const shark = document.createElement('a-entity');
-        shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`); // start below water
-        shark.setAttribute('gltf-model', '#sharkGLTF');
-        shark.setAttribute('shrink-on-load', 's:0.5'); 
-        shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
-        shark.setAttribute('shark-attack','rise:900; hold:600; fall:900; hitRadius:1.0');
-        this.el.sceneEl.appendChild(shark);
-
-        // remove the red marker once shark is spawned
-        this.el.parentNode && this.el.parentNode.removeChild(this.el);
-      }
-    }
-  });
-  
-  AFRAME.registerComponent('shark-threat-zone', {
-    schema: { hitRadius: { default: 1.0 } },
-    init() {
-      this.player = document.querySelector('#rig');
-      this.game = document.querySelector('#game').components['game-manager'];
-      this.shark = this.el.closest('[shark-attack]');
-      if (!this.shark) {
-        console.error('shark-threat-zone must be a child of a shark-attack entity.');
-        return;
-      }
-      
-      // Player is at Y=0.3. Shark apex is at Y=0.0. An offset of 1.0 positions the sphere right on the player's height.
-      this.el.setAttribute('position', '0 1.0 0'); 
-    },
-    tick() {
-      if (this.game.isGameOver) return;
-      
-      const p = new THREE.Vector3();
-      const q = new THREE.Vector3();
-      this.el.object3D.getWorldPosition(p);
-      this.player.object3D.getWorldPosition(q);
-      
-      // Check distance from the player's world position to the threat zone's world position
-      if (p.distanceTo(q) < this.data.hitRadius) {
-        this.game.gameOver();
-      }
-    }
-  });
-
-  /* Shark rises, holds, falls; touching it -> game over */
-  AFRAME.registerComponent('shark-attack', {
-    schema: {
-      rise:{default:900}, hold:{default:600}, fall:{default:900},
-      startY:{default:-0.8}, 
-      apexY:{default: 0.0} 
-    },
-    init(){
-      this.t0 = performance.now();
-      
-      // Create a threat zone
-      this.threatZone = document.createElement('a-entity');
-      this.threatZone.setAttribute('shark-threat-zone', `hitRadius: 1.0`);
-      this.el.appendChild(this.threatZone);
-      
-      const pos = this.el.getAttribute('position');
-      this.x = pos.x; this.z = pos.z;
-      this.el.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
-    },
-    tick(){
-      const now = performance.now();
-      const t = now - this.t0;
-      const {rise, hold, fall, startY, apexY} = this.data;
-      const total = rise + hold + fall;
-      let y;
-
-      if (t < rise){
-        const k = t / rise;
-        y = startY + (apexY - startY) * k;
-      } else if (t < rise + hold){
-        y = apexY;
-      } else if (t < total){
-        const k = (t - rise - hold) / fall;
-        y = apexY + (startY - apexY) * k;
-      } else {
-        // After the animation, remove the shark and its threat zone
-        this.el.parentNode.removeChild(this.el);
-        return;
-      }
-
-      this.el.setAttribute('position', `${this.x} ${y} ${this.z}`);
-    }
-  });
-  </script>
-</body>
-</html>
+      const ring = document.
