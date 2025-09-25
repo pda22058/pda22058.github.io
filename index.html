@@ -292,9 +292,9 @@
         return;
       }
       
-      // FIX: Offset the threat zone upward to align with the player's y-position (0.7) when the shark is at its apex (-0.5).
-      // The difference (0.7 - (-0.5)) is 1.2, but based on the model scale (0.5), 2.5 is a better fit.
-      this.el.setAttribute('position', '0 2.5 0'); 
+      // FIX 1: Adjusting this offset slightly lower.
+      // This centers the 1.0 hitRadius sphere right where the player's head (y=0.7) will be.
+      this.el.setAttribute('position', '0 2.0 0'); 
     },
     tick() {
       if (this.game.isGameOver) return;
@@ -316,7 +316,9 @@
     schema: {
       rise:{default:900}, hold:{default:600}, fall:{default:900},
       startY:{default:-0.8}, 
-      apexY:{default:-0.1} // FIX: Increased apexY to bring the shark/collision zone closer to the surface (0.7).
+      // FIX 2: Raise apexY to bring the shark's base (Y=0.0) closer to the surface. 
+      // This works with the threat zone offset of 2.0 to hit the player at Y=0.7.
+      apexY:{default: 0.0} 
     },
     init(){
       this.t0 = performance.now();
