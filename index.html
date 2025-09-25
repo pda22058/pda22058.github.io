@@ -261,6 +261,7 @@
       const disk = document.createElement('a-entity');
       disk.setAttribute('geometry','primitive: circle; radius: 4.8');
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
+      disk.setAttribute('rotation','90 0 0'); // <-- CORRECTION: Rotation for the inner circle disk
       this.el.appendChild(disk);
 
       this.start = performance.now();
