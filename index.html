@@ -38,20 +38,20 @@
     <a-entity light="type: ambient; color: #888"></a-entity>
 
         <a-entity id="rig" position="0 0.7 0" 
-            movement-controls="speed: 0.2" 
-            collision-detector="objects: #boundaries > a-box">
+            movement-controls="speed: 0.4; controls: keyboard; fly: true; collisionTolerance: 0.05" 
+            collision-detector="objects: #boundaries > a-box; radius: 0.7">
       <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
         <a-entity id="boundaries">
-            <a-box collidable width="50" height="2" depth="1" position="0 1 25.5"
-             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
-            <a-box collidable width="50" height="2" depth="1" position="0 1 -25.5"
-             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
-            <a-box collidable width="1" height="2" depth="50" position="25.5 1 0"
-             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
-            <a-box collidable width="1" height="2" depth="50" position="-25.5 1 0"
-             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
+            <a-box collidable width="50" height="2" depth="2" position="0 1 26"
+             material="color:#000; opacity:0; transparent:true"></a-box>
+            <a-box collidable width="50" height="2" depth="2" position="0 1 -26"
+             material="color:#000; opacity:0; transparent:true"></a-box>
+            <a-box collidable width="2" height="2" depth="50" position="26 1 0"
+             material="color:#000; opacity:0; transparent:true"></a-box>
+            <a-box collidable width="2" height="2" depth="50" position="-26 1 0"
+             material="color:#000; opacity:0; transparent:true"></a-box>
     </a-entity>
         <a-entity id="collectibles"></a-entity>
 
@@ -135,8 +135,11 @@
       overlay.style.opacity = '1';
 
       const cam = document.getElementById('player');
-      cam.removeAttribute('wasd-controls');
       cam.removeAttribute('look-controls');
+      const rig = document.getElementById('rig');
+      rig.removeAttribute('movement-controls');
+      rig.removeAttribute('collision-detector');
+      
       const parent = document.getElementById('collectibles');
       while (parent.firstChild) parent.removeChild(parent.firstChild);
     },
