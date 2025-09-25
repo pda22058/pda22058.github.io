@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ocean Survival — A-Frame</title>
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v5.1.0/dist/aframe-physics-system.min.js"></script>
   <script src="https://unpkg.com/@c-frame/aframe-particle-system-component@1.2.x/dist/aframe-particle-system-component.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-simple-sun-sky@^1.2.2/simple-sun-sky.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.0/dist/aframe-extras.min.js"></script>
@@ -23,7 +22,7 @@
     <div id="status" class="pill">Status: Ready</div>
   </div>
 
-    <a-scene physics="gravity: 0 0 0; debug: false">
+  <a-scene>
     <a-assets timeout="30000">
       <a-asset-item id="bottleGLTF" src="./assets/models/military_water_bottle/scene.gltf"></a-asset-item>
       <a-asset-item id="sharkGLTF"  src="./assets/models/great_white_shark_attack_bite_animation_loop/scene.gltf"></a-asset-item>
@@ -46,24 +45,13 @@
     <a-entity light="type: ambient; color: #888"></a-entity>
 
         <a-entity id="rig" position="0 0.7 0" 
-        kinematic-body="radius: 0.5; height: 1.4; mass: 5"
-        movement-controls="speed: 0.2; fly: true"> 
+        movement-controls="speed: 0.2"> 
       <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
-    <a-entity id="boundaries">
-                                <a-box static-body width="55" height="5" depth="5" position="0 0.5 27.5"
-         material="visible: false"></a-box>
-                <a-box static-body width="55" height="5" depth="5" position="0 0.5 -27.5"
-         material="visible: false"></a-box>
-                <a-box static-body width="5" height="5" depth="55" position="27.5 0.5 0"
-         material="visible: false"></a-box>
-                <a-box static-body width="5" height="5" depth="55" position="-27.5 0.5 0"
-         material="visible: false"></a-box>
-    </a-entity>
-    <a-entity id="collectibles"></a-entity>
+        <a-entity id="collectibles"></a-entity>
 
-        <a-entity id="game" game-manager target-spawner="intervalMin: 4000; max: 7000; radius: 25; count: 2; minSep: 6"></a-entity>
+        <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 25; count: 2; minSep: 6"></a-entity>
   </a-scene>
 
   <script>
@@ -195,12 +183,12 @@
     }
   });
 
-  /* Spawn multiple targets at once with separation (Radius reset to 25) */
+  /* Spawn multiple targets at once with separation (Radius remains 25) */
   AFRAME.registerComponent('target-spawner',{
     schema:{
       intervalMin:{default:4000},
       intervalMax:{default:7000},
-      radius:{default:25}, // 🎯 RADIUS: Reset to 25 to keep targets in the 50x50 area
+      radius:{default:25}, // 🎯 RADIUS: Remains 25 to keep targets in the 50x50 area
       count:{default:2},
       minSep:{default:6},
       deadline:{default:3000},
