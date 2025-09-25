@@ -45,10 +45,15 @@
     <a-entity light="type: ambient; color: #888"></a-entity>
 
     <a-entity id="rig" position="0 0.7 0" 
-            movement-controls="speed: 0.2; constrainToBoundingBox: true" 
-            collision-detector="objects: #boundaries > a-box">
-      <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
-    </a-entity>
+    kinematic-body="radius: 0.5; height: 1.4; mass: 5" 
+    wasd-controls="acceleration: 100; fly: true">
+
+        <a-entity id="player" 
+        camera 
+        look-controls 
+        position="0 -0.3 -0.15"> 
+    </a-entity>
+</a-entity>
 
     <a-entity id="boundaries">
         <a-box collidable width="50" height="5" depth="5" position="0 0.5 26.5"
