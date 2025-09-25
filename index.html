@@ -34,31 +34,31 @@
               material="color: #192f3d; opacity: 0.75; metalness: 0; roughness: 1"
               rotation="-90 0 0"></a-entity>
 
-        <a-entity id="deep-ocean" 
-        ocean="density: 20; width: 100; depth: 100; speed: 4"
+        <a-entity id="deep-ocean" 
+        ocean="density: 20; width: 100; depth: 100; speed: 4"
         material="color: #192f3d; opacity: 0.75; metalness: 0; roughness: 1"
-        rotation="-90 0 0" 
-        position="0 -2 0">
-    </a-entity>
+        rotation="-90 0 0" 
+        position="0 -2 0">
+    </a-entity>
 
     <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
     <a-entity light="type: ambient; color: #888"></a-entity>
 
         <a-entity id="rig" position="0 0.7 0" 
-            movement-controls="speed: 0.2; constrainToBoundingBox: true" 
+            movement-controls="speed: 0.2; constrainToBoundingBox: true" 
             collision-detector="objects: #boundaries > a-box">
       <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
         <a-entity id="boundaries">
-                        <a-box collidable width="50" height="5" depth="5" position="0 0.5 26.5"
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
-                        <a-box collidable width="50" height="5" depth="5" position="0 0.5 -26.5"
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
-                        <a-box collidable width="5" height="5" depth="50" position="26.5 0.5 0"
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
-                        <a-box collidable width="5" height="5" depth="50" position="-26.5 0.5 0"
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
+                        <a-box collidable width="55" height="5" depth="5" position="0 0.5 27.5"
+             material="visible: false"></a-box>
+                        <a-box collidable width="55" height="5" depth="5" position="0 0.5 -27.5"
+             material="visible: false"></a-box>
+                        <a-box collidable width="5" height="5" depth="55" position="27.5 0.5 0"
+             material="visible: false"></a-box>
+                        <a-box collidable width="5" height="5" depth="55" position="-27.5 0.5 0"
+             material="visible: false"></a-box>
     </a-entity>
     <a-entity id="collectibles"></a-entity>
 
@@ -81,7 +81,7 @@
       this.el.addEventListener('model-loaded', apply, {once:true});
     }
   });
-          
+          
 
   /* Core game manager (unchanged logic for meter & bottles) */
   AFRAME.registerComponent('game-manager', {
