@@ -45,7 +45,7 @@
     <a-entity light="type: ambient; color: #888"></a-entity>
 
     <a-entity id="rig" position="0 0.7 0" 
-            movement-controls="speed: 0.2" 
+            movement-controls="speed: 0.2; constrainToBoundingBox: true" 
             collision-detector="objects: #boundaries > a-box">
       <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
     </a-entity>
