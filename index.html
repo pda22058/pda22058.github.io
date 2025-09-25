@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ocean Survival — A-Frame</title>
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v5.1.0/dist/aframe-physics-system.min.js"></script>
   <script src="https://unpkg.com/@c-frame/aframe-particle-system-component@1.2.x/dist/aframe-particle-system-component.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-simple-sun-sky@^1.2.2/simple-sun-sky.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.0/dist/aframe-extras.min.js"></script>
@@ -19,10 +20,10 @@
     <div class="pill">WASD to move • Mouse to look • Enter VR if supported</div>
     <div class="pill">Avoid the glowing red circles. Stay safe!</div>
     <div id="meter" class="pill">Survival: 100%</div>
-    <div id="status" class="pill">Status: Ready</div>
+    <div id="status" class="pill">Status: Loading Assets...</div>
   </div>
 
-  <a-scene>
+    <a-scene physics="gravity: 0; debug: false"> 
     <a-assets timeout="30000">
       <a-asset-item id="bottleGLTF" src="./assets/models/military_water_bottle/scene.gltf"></a-asset-item>
       <a-asset-item id="sharkGLTF"  src="./assets/models/great_white_shark_attack_bite_animation_loop/scene.gltf"></a-asset-item>
@@ -44,24 +45,23 @@
     <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
     <a-entity light="type: ambient; color: #888"></a-entity>
 
-   <a-entity id="rig" position="0 0.7 0" 
-    kinematic-body="radius: 0.5; height: 1.4; mass: 5" 
-    movement-controls="speed: 0.2; fly: true"
-    constrain-movement="axis: y"> 
-        </a-entity>
-        <a-entity id="player" camera look-controls position="0 -0.3 -0.15"></a-entity>
-</a-entity>
+        <a-entity id="rig" position="0 0.7 0" 
+            kinematic-body="radius: 0.5; height: 1.4; mass: 5" 
+            game-start>
 
-    <a-entity id="boundaries">
-        <a-box collidable width="50" height="5" depth="5" position="0 0.5 26.5"
-        material="color:#ff0000; opacity:0; transparent:true"></a-box>
-        <a-box collidable width="50" height="5" depth="5" position="0 0.5 -26.5"
-        material="color:#ff0000; opacity:0; transparent:true"></a-box>
-        <a-box collidable width="5" height="5" depth="50" position="26.5 0.5 0"
-        material="color:#ff0000; opacity:0; transparent:true"></a-box>
-        <a-box collidable width="5" height="5" depth="50" position="-26.5 0.5 0"
-        material="color:#ff0000; opacity:0; transparent:true"></a-box>
-</a-entity>
+            <a-entity id="player" camera look-controls position="0 -0.3 -0.15"></a-entity>
+    </a-entity>
+
+        <a-entity id="boundaries">
+                        <a-box static-body width="50" height="5" depth="5" position="0 0.5 26.5"
+             material="color:#ff0000; opacity:0; transparent:true"></a-box>
+                        <a-box static-body width="50" height="5" depth="5" position="0 0.5 -26.5"
+             material="color:#ff0000; opacity:0; transparent:true"></a-box>
+                        <a-box static-body width="5" height="5" depth="50" position="26.5 0.5 0"
+             material="color:#ff0000; opacity:0; transparent:true"></a-box>
+                        <a-box static-body width="5" height="5" depth="50" position="-26.5 0.5 0"
+             material="color:#ff0000; opacity:0; transparent:true"></a-box>
+    </a-entity>
     <a-entity id="collectibles"></a-entity>
 
     <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 25; count: 2; minSep: 6"></a-entity>
@@ -74,6 +74,29 @@
   function setStatus(t){ statusEl.textContent = 'Status: ' + t; }
   function setMeter(v){ meterEl.textContent  = 'Survival: ' + Math.round(v) + '%'; }
 
+  /* Component to start movement and game logic only after all assets load */
+  AFRAME.registerComponent('game-start', {
+    init: function () {
+        const rigEl = this.el;
+        const sceneEl = this.el.sceneEl;
+
+        sceneEl.addEventListener('loaded', () => {
+            // Check if controls are already attached before adding them
+            if (!rigEl.components['movement-controls']) {
+                rigEl.setAttribute('movement-controls', 'speed: 0.2; fly: true');
+                rigEl.setAttribute('constrain-movement', 'axis: y');
+                setStatus('Controls initialized. Ready to play!');
+            }
+            
+            // Also ensure the game-manager is ready, in case it was slow
+            const gameEl = document.querySelector('#game');
+            if (gameEl && gameEl.components['game-manager']) {
+                gameEl.components['game-manager'].startGame();
+            }
+        }, { once: true });
+    }
+  });
+
   /* Uniform scale after model loads (used by bottles and shark) */
   AFRAME.registerComponent('shrink-on-load', {
     schema: { s: {default: 0.002} },
@@ -84,7 +107,7 @@
     }
   });
 
-  /* Core game manager (unchanged logic for meter & bottles) */
+  /* Core game manager (updated to wait for startGame call) */
   AFRAME.registerComponent('game-manager', {
     init(){
       this.isGameOver = false;
@@ -97,17 +120,31 @@
 
       this.survival = 100;
       setMeter(this.survival);
+      this.decayTimer = null; // Timer starts in startGame()
+      
+      window.addEventListener('bottle-collected', () => {
+        if (!this.isGameOver) {
+          this.adjustSurvival(+10);
+          this.spawnIfNone();
+        }
+      });
+      
+      // Initial status while waiting for assets
+      setStatus('Loading Assets...');
+    },
+
+    // NEW: Start game logic only when assets are fully loaded
+    startGame() {
+      if (this.decayTimer) return; // Already started
+
+      // Start decay timer
       this.decayTimer = setInterval(() => {
         if (!this.isGameOver) this.adjustSurvival(-10);
       }, 10000);
 
-      this.isSpawning = false;
-      window.addEventListener('bottle-collected', () => {
-        this.adjustSurvival(+10);
-        this.spawnIfNone();
-      });
-
+      // Start initial spawning
       this.spawnIfNone();
+      setStatus('Ready');
     },
 
     adjustSurvival(delta){
@@ -144,8 +181,12 @@
       overlay.style.opacity = '1';
 
       const cam = document.getElementById('player');
-      cam.removeAttribute('wasd-controls');
+      // Use the rig ID to remove the movement controls
+      const rig = document.getElementById('rig');
+      rig.removeAttribute('movement-controls');
+      rig.removeAttribute('constrain-movement');
       cam.removeAttribute('look-controls');
+
       const parent = document.getElementById('collectibles');
       while (parent.firstChild) parent.removeChild(parent.firstChild);
     },
@@ -266,7 +307,6 @@
       ring.setAttribute('rotation','90 0 0');
       ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
       this.el.appendChild(ring);
-            
 
       const disk = document.createElement('a-entity');
       disk.setAttribute('geometry','primitive: circle; radius: 4.8');
