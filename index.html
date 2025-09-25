@@ -38,20 +38,20 @@
     <a-entity light="type: ambient; color: #888"></a-entity>
 
         <a-entity id="rig" position="0 0.3 0" 
-            movement-controls="speed: 0.3" 
+            movement-controls="speed: 0.2" 
             collision-detector="objects: #boundaries > a-box">
-      <a-entity id="player" camera look-controls position="0 0 0"></a-entity>
+      <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
         <a-entity id="boundaries">
             <a-box collidable width="50" height="2" depth="1" position="0 1 25.5"
-             material="color:#000; opacity:0; transparent:true"></a-box>
+             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
             <a-box collidable width="50" height="2" depth="1" position="0 1 -25.5"
-             material="color:#000; opacity:0; transparent:true"></a-box>
+             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
             <a-box collidable width="1" height="2" depth="50" position="25.5 1 0"
-             material="color:#000; opacity:0; transparent:true"></a-box>
+             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
             <a-box collidable width="1" height="2" depth="50" position="-25.5 1 0"
-             material="color:#000; opacity:0; transparent:true"></a-box>
+             material="color:#ff0000; opacity:0.2; transparent:true"></a-box>
     </a-entity>
         <a-entity id="collectibles"></a-entity>
 
@@ -261,7 +261,6 @@
       const disk = document.createElement('a-entity');
       disk.setAttribute('geometry','primitive: circle; radius: 4.8');
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
-      disk.setAttribute('rotation','-90 0 0');
       this.el.appendChild(disk);
 
       this.start = performance.now();
