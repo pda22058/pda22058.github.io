@@ -46,13 +46,8 @@
 
     <a-entity id="rig" position="0 0.7 0" 
     kinematic-body="radius: 0.5; height: 1.4; mass: 5" 
-    wasd-controls="acceleration: 100; fly: true">
-
-        <a-entity id="player" 
-        camera 
-        look-controls 
-        position="0 -0.3 -0.15"> 
-    </a-entity>
+    movement-controls="speed: 0.2; fly: true">
+        <a-entity id="player" camera look-controls position="0 -0.3 -0.15"></a-entity>
 </a-entity>
 
     <a-entity id="boundaries">
