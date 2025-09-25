@@ -324,8 +324,8 @@
   AFRAME.registerComponent('shark-attack', {
     schema: {
       rise:{default:900}, hold:{default:600}, fall:{default:900},
-      **startY:{default:-10.0},** // ⬅️ CHANGED: Starts much deeper
-      **apexY:{default: -2.5}**  // ⬅️ CHANGED: Jumps to a new, deeper peak, keeping the body submerged
+      **startY:{default:-3.0},** // ⬅️ CHANGED: Starts much deeper now
+      **apexY:{default: -1.5}**  // ⬅️ CHANGED: Jumps to a lower peak, remaining mostly submerged
     },
     init(){
       this.t0 = performance.now();
