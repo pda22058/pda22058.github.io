@@ -37,11 +37,21 @@
     <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
     <a-entity light="type: ambient; color: #888"></a-entity>
 
-    <a-entity id="rig" position="0 0.5 0">
+    <a-entity id="rig" position="0 0.3 0">
       <a-entity id="player" camera look-controls wasd-controls="acceleration: 8" position="0 -0.3 0"></a-entity>
     </a-entity>
 
-    <a-entity id="collectibles"></a-entity>
+        <a-entity id="boundaries">
+            <a-box width="50" height="2" depth="1" position="0 1 25.5"
+             material="color:#000; opacity:0; transparent:true"></a-box>
+            <a-box width="50" height="2" depth="1" position="0 1 -25.5"
+             material="color:#000; opacity:0; transparent:true"></a-box>
+            <a-box width="1" height="2" depth="50" position="25.5 1 0"
+             material="color:#000; opacity:0; transparent:true"></a-box>
+            <a-box width="1" height="2" depth="50" position="-25.5 1 0"
+             material="color:#000; opacity:0; transparent:true"></a-box>
+    </a-entity>
+        <a-entity id="collectibles"></a-entity>
 
     <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 25; count: 2; minSep: 6"></a-entity>
   </a-scene>
@@ -292,9 +302,8 @@
         return;
       }
       
-      // FIX 1: Adjusting this offset slightly lower.
-      // This centers the 1.0 hitRadius sphere right where the player's head (y=0.7) will be.
-      this.el.setAttribute('position', '0 2.0 0'); 
+      // Player is at Y=0.3. Shark apex is at Y=0.0. An offset of 1.0 positions the sphere right on the player's height.
+      this.el.setAttribute('position', '0 1.0 0'); 
     },
     tick() {
       if (this.game.isGameOver) return;
@@ -316,8 +325,6 @@
     schema: {
       rise:{default:900}, hold:{default:600}, fall:{default:900},
       startY:{default:-0.8}, 
-      // FIX 2: Raise apexY to bring the shark's base (Y=0.0) closer to the surface. 
-      // This works with the threat zone offset of 2.0 to hit the player at Y=0.7.
       apexY:{default: 0.0} 
     },
     init(){
