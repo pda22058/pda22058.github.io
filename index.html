@@ -1,755 +1,381 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
   <meta charset="utf-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <title>Ocean Survival — A-Frame</title>
-
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v5.1.0/dist/aframe-physics-system.min.js"></script>
   <script src="https://unpkg.com/@c-frame/aframe-particle-system-component@1.2.x/dist/aframe-particle-system-component.min.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/aframe-simple-sun-sky@^1.2.2/simple-sun-sky.js"></script>
-
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.0/dist/aframe-extras.min.js"></script>
-
   <style>
-
     body { margin:0; }
-
     .hud { position: fixed; left: 12px; top: 12px; font: 14px/1.4 system-ui, sans-serif; color: #fff; z-index: 10; }
-
     .hud .pill { background: rgba(0,0,0,.45); padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; }
-
   </style>
-
 </head>
-
 <body>
-
   <div class="hud">
-
     <div class="pill">WASD to move • Mouse to look • Enter VR if supported</div>
-
     <div class="pill">Avoid the glowing red circles. Stay safe!</div>
-
     <div id="meter" class="pill">Survival: 100%</div>
-
     <div id="status" class="pill">Status: Ready</div>
-
   </div>
 
-
-
-  <a-scene>
-
+    <a-scene physics="gravity: 0 0 0; debug: false">
     <a-assets timeout="30000">
-
       <a-asset-item id="bottleGLTF" src="./assets/models/military_water_bottle/scene.gltf"></a-asset-item>
-
       <a-asset-item id="sharkGLTF"  src="./assets/models/great_white_shark_attack_bite_animation_loop/scene.gltf"></a-asset-item>
-
     </a-assets>
-
-
 
     <a-entity id="rain" particle-system="preset: rain; color: #aee7ff; particleCount: 20"></a-entity>
 
-
-
-        <a-entity id="ocean" ocean="density: 20; width: 50; depth: 50; speed: 4"
-
+        <a-entity id="ocean" ocean="density: 20; width: 200; depth: 200; speed: 4"
               material="color: #192f3d; opacity: 0.75; metalness: 0; roughness: 1"
-
               rotation="-90 0 0"></a-entity>
 
-
-
         <a-entity id="deep-ocean" 
-
-        ocean="density: 20; width: 100; depth: 100; speed: 4"
-
+        ocean="density: 20; width: 200; depth: 200; speed: 4"
         material="color: #192f3d; opacity: 0.75; metalness: 0; roughness: 1"
-
         rotation="-90 0 0" 
-
         position="0 -2 0">
-
     </a-entity>
-
-
 
     <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
-
     <a-entity light="type: ambient; color: #888"></a-entity>
 
-
-
-        <a-entity id="rig" position="0 0.7 0" 
-
-            movement-controls="speed: 0.2; constrainToBoundingBox: true" 
-
-            collision-detector="objects: #boundaries > a-box">
-
+                <a-entity id="rig" position="0 0.7 0" 
+            kinematic-body="radius: 0.5; height: 1.4; mass: 5"
+            movement-controls="speed: 0.2; fly: true"> 
       <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
-
     </a-entity>
-
-
 
         <a-entity id="boundaries">
-
-                        <a-box collidable width="50" height="5" depth="5" position="0 0.5 26.5"
-
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
-
-                        <a-box collidable width="50" height="5" depth="5" position="0 0.5 -26.5"
-
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
-
-                        <a-box collidable width="5" height="5" depth="50" position="26.5 0.5 0"
-
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
-
-                        <a-box collidable width="5" height="5" depth="50" position="-26.5 0.5 0"
-
-             material="color:#ff0000; opacity:0; transparent:true"></a-box>
-
+                                                <a-box static-body width="205" height="5" depth="5" position="0 0.5 102.5"
+             material="visible: false"></a-box>
+                        <a-box static-body width="205" height="5" depth="5" position="0 0.5 -102.5"
+             material="visible: false"></a-box>
+                        <a-box static-body width="5" height="5" depth="205" position="102.5 0.5 0"
+             material="visible: false"></a-box>
+                        <a-box static-body width="5" height="5" depth="205" position="-102.5 0.5 0"
+             material="visible: false"></a-box>
     </a-entity>
+        <a-entity id="collectibles"></a-entity>
 
-    <a-entity id="collectibles"></a-entity>
-
-
-
-    <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 25; count: 2; minSep: 6"></a-entity>
-
+        <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 100; count: 2; minSep: 6"></a-entity>
   </a-scene>
 
-
-
   <script>
-
   function randRange(min,max){ return Math.random()*(max-min)+min; }
-
   const statusEl = document.getElementById('status');
-
   const meterEl  = document.getElementById('meter');
-
   function setStatus(t){ statusEl.textContent = 'Status: ' + t; }
-
   function setMeter(v){ meterEl.textContent  = 'Survival: ' + Math.round(v) + '%'; }
 
-
-
   /* Uniform scale after model loads (used by bottles and shark) */
-
   AFRAME.registerComponent('shrink-on-load', {
-
     schema: { s: {default: 0.002} },
-
     init () {
-
       const apply = () => this.el.object3D.scale.setScalar(this.data.s);
-
       if (this.el.getObject3D('mesh')) apply();
-
       this.el.addEventListener('model-loaded', apply, {once:true});
-
     }
-
   });
 
-          
-
-
-
-  /* Core game manager (unchanged logic for meter & bottles) */
-
+  /* Core game manager (updated to use new ocean dimensions for bottle spawning) */
   AFRAME.registerComponent('game-manager', {
-
     init(){
-
       this.isGameOver = false;
-
       this.player = document.querySelector('#rig');
-
-
 
       const oceanEl  = document.getElementById('ocean');
-
       const oceanData = oceanEl ? oceanEl.getAttribute('ocean') || {} : {};
-
-      this.halfW = (oceanData.width || 50) / 2 - 2;
-
-      this.halfD = (oceanData.depth || 50) / 2 - 2;
-
-
+      // Dynamically determines half the ocean size minus a border (2 units)
+      this.halfW = (oceanData.width || 200) / 2 - 2; // NOW 98
+      this.halfD = (oceanData.depth || 200) / 2 - 2; // NOW 98
 
       this.survival = 100;
-
       setMeter(this.survival);
-
       this.decayTimer = setInterval(() => {
-
         if (!this.isGameOver) this.adjustSurvival(-10);
-
       }, 10000);
 
-
-
       this.isSpawning = false;
-
       window.addEventListener('bottle-collected', () => {
-
         this.adjustSurvival(+10);
-
         this.spawnIfNone();
-
       });
 
-
-
       this.spawnIfNone();
-
     },
-
-
 
     adjustSurvival(delta){
-
       if (this.isGameOver) return;
-
       this.survival = Math.max(0, Math.min(100, this.survival + delta));
-
       setMeter(this.survival);
-
       if (this.survival <= 0){
-
         setStatus('Energy depleted.');
-
         this.gameOver();
-
       }
-
     },
-
-
 
     spawnIfNone(){
-
       if (this.isGameOver) return;
-
       const parent = document.getElementById('collectibles');
-
       if (this.isSpawning || parent.childElementCount > 0) return;
-
       this.isSpawning = true;
-
       setTimeout(() => {
-
         this.spawnOneBottle();
-
         this.isSpawning = false;
-
       }, 0);
-
     },
-
-
 
     gameOver(){
-
       if(this.isGameOver) return;
-
       this.isGameOver = true;
-
       setStatus('Game Over');
-
       if (this.decayTimer) { clearInterval(this.decayTimer); this.decayTimer = null; }
-
       
-
       const overlay = document.createElement('div');
-
       overlay.style.cssText = 'position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .6s;display:flex;align-items:center;justify-content:center;color:#fff;font:700 42px/1.1 system-ui;letter-spacing:.5px;z-index:20';
-
       overlay.textContent = 'GAME OVER';
-
       document.body.appendChild(overlay);
-
       overlay.style.opacity = '1';
 
-
-
       const cam = document.getElementById('player');
-
       cam.removeAttribute('wasd-controls');
-
       cam.removeAttribute('look-controls');
-
+      // Need to remove movement-controls from the rig, as it now drives the movement
+      document.getElementById('rig').removeAttribute('movement-controls'); 
       const parent = document.getElementById('collectibles');
-
       while (parent.firstChild) parent.removeChild(parent.firstChild);
-
     },
-
-
 
     spawnOneBottle(){
-
       if (this.isGameOver) return;
-
       const parent = document.getElementById('collectibles');
-
       while (parent.firstChild) parent.removeChild(parent.firstChild);
 
-
-
       const x = randRange(-this.halfW, this.halfW);
-
       const z = randRange(-this.halfD, this.halfD);
-
       const y = 0.1;
 
-
-
       const e = document.createElement('a-entity');
-
       e.setAttribute('collectible','');
-
       e.setAttribute('gltf-model', '#bottleGLTF');
-
       e.setAttribute('shrink-on-load', 's:0.002');
-
       e.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
-
       e.setAttribute('position', `${x} ${y} ${z}`);
-
       parent.appendChild(e);
 
-
-
       setStatus('Bottle spawned — collect it to gain +10%!');
-
     }
-
   });
-
-
 
   /* Bottle pickup */
-
   AFRAME.registerComponent('collectible',{
-
     schema:{ radius:{default:1.1} },
-
     init(){
-
       this.player = document.querySelector('#player');
-
       this._removed = false;
-
       this._p = new THREE.Vector3();
-
       this._q = new THREE.Vector3();
-
     },
-
     tick(){
-
       if (this._removed) return;
-
       this.el.object3D.getWorldPosition(this._p);
-
       this.player.object3D.getWorldPosition(this._q);
-
       if (this._p.distanceTo(this._q) < this.data.radius){
-
         this._removed = true;
-
         const parent = this.el.parentNode;
-
         parent && parent.removeChild(this.el);
-
         window.dispatchEvent(new CustomEvent('bottle-collected'));
-
         setStatus('Collected! +10%');
-
       }
-
     }
-
   });
-
-
 
   /* Spawn multiple targets at once with separation */
-
   AFRAME.registerComponent('target-spawner',{
-
     schema:{
-
       intervalMin:{default:4000},
-
       intervalMax:{default:7000},
-
-      radius:{default:25},
-
+      radius:{default:100}, // RADIUS: Updated to 100 for 200x200 area
       count:{default:2},
-
       minSep:{default:6},
-
       deadline:{default:3000},
-
-      delay:{default:3000} // New delay schema
-
+      delay:{default:3000}
     },
-
     init(){
-
       this.player = document.querySelector('#rig');
-
       this.game = document.querySelector('#game').components['game-manager'];
-
       this.timer = 0;
-
       this.nextAt = this.nextInterval();
-
     },
-
     nextInterval(){
-
       return Math.random()*(this.data.intervalMax - this.data.intervalMin) + this.data.intervalMin;
-
     },
-
     tick(time,dt){
-
       if(this.game.isGameOver) return;
-
       this.timer += dt;
-
       if(this.timer >= this.nextAt){
-
         this.timer = 0;
-
         this.nextAt = this.nextInterval();
-
         this.spawnTargets();
-
       }
-
     },
-
     spawnTargets(){
-
       const positions = [];
-
       let tries = 0;
-
       while (positions.length < this.data.count && tries < 50) {
-
           const x = Math.random() * (2 * this.data.radius) - this.data.radius;
-
           const z = Math.random() * (2 * this.data.radius) - this.data.radius;
-
           const ok = positions.every(p => Math.hypot(p.x - x, p.z - z) >= this.data.minSep);
-
           if (ok) positions.push({ x, z });
-
           tries++;
-
       }
-
       
-
       // Spawn the first target immediately
-
       if (positions[0]) {
-
           const p = positions[0];
-
           const t = document.createElement('a-entity');
-
           t.setAttribute('position', `${p.x} 0.05 ${p.z}`);
-
           t.setAttribute('target-marker', `deadline: ${this.data.deadline}`);
-
           this.el.sceneEl.appendChild(t);
-
       }
-
       
-
       // Spawn the second target after the delay
-
       if (positions[1]) {
-
           const p = positions[1];
-
           setTimeout(() => {
-
               const t = document.createElement('a-entity');
-
               t.setAttribute('position', `${p.x} 0.05 ${p.z}`);
-
               t.setAttribute('target-marker', `deadline: ${this.data.deadline}`);
-
               this.el.sceneEl.appendChild(t);
-
           }, this.data.delay);
-
       }
-
     }
-
   });
-
-
 
   /* Target (kills on touch immediately). After deadline, spawns a shark there. */
-
   AFRAME.registerComponent('target-marker',{
-
     schema:{ deadline:{default:3000}, hitRadius:{default:4.2} },
-
     init(){
-
       const ring = document.createElement('a-entity');
-
       ring.setAttribute('geometry','primitive: torus; radius: 5.0; radiusTubular: 0.05; arc: 360');
-
       ring.setAttribute('material','color:#ff2b2b; emissive:#a10000; emissiveIntensity:0.6');
-
       ring.setAttribute('rotation','90 0 0');
-
       ring.setAttribute('animation','property: material.emissiveIntensity; dir: alternate; dur: 500; loop: true; to: 1.2');
-
       this.el.appendChild(ring);
 
-
-
       const disk = document.createElement('a-entity');
-
       disk.setAttribute('geometry','primitive: circle; radius: 4.8');
-
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
-
-      disk.setAttribute('rotation','90 0 0'); // <-- CORRECTION: Rotation for the inner circle disk
-
+      disk.setAttribute('rotation','90 0 0'); 
       this.el.appendChild(disk);
 
-
-
       this.start = performance.now();
-
       this.player = document.querySelector('#rig');
-
       this.game = document.querySelector('#game').components['game-manager'];
-
       this.resolved = false;
-
       setStatus('Target appeared! Move away!');
-
     },
-
     tick(){
-
       if(this.game.isGameOver || this.resolved) return;
 
-
-
       const now = performance.now();
-
-
 
       // Time to trigger shark?
-
       if(now - this.start >= this.data.deadline){
-
         this.resolved = true;
-
         const pos = this.el.getAttribute('position'); // scene coords
-
         const shark = document.createElement('a-entity');
-
         shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`); // start below water
-
         shark.setAttribute('gltf-model', '#sharkGLTF');
-
         shark.setAttribute('shrink-on-load', 's:0.5'); 
-
         shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
-
         shark.setAttribute('shark-attack','rise:900; hold:600; fall:900; hitRadius:1.0');
-
         this.el.sceneEl.appendChild(shark);
 
-
-
         // remove the red marker once shark is spawned
-
         this.el.parentNode && this.el.parentNode.removeChild(this.el);
-
       }
-
     }
-
   });
-
   
-
   AFRAME.registerComponent('shark-threat-zone', {
-
     schema: { hitRadius: { default: 1.0 } },
-
     init() {
-
       this.player = document.querySelector('#rig');
-
       this.game = document.querySelector('#game').components['game-manager'];
-
       this.shark = this.el.closest('[shark-attack]');
-
       if (!this.shark) {
-
         console.error('shark-threat-zone must be a child of a shark-attack entity.');
-
         return;
-
       }
-
       
-
       // Player is at Y=0.3. Shark apex is at Y=0.0. An offset of 1.0 positions the sphere right on the player's height.
-
       this.el.setAttribute('position', '0 1.0 0'); 
-
     },
-
     tick() {
-
       if (this.game.isGameOver) return;
-
       
-
       const p = new THREE.Vector3();
-
       const q = new THREE.Vector3();
-
       this.el.object3D.getWorldPosition(p);
-
       this.player.object3D.getWorldPosition(q);
-
       
-
       // Check distance from the player's world position to the threat zone's world position
-
       if (p.distanceTo(q) < this.data.hitRadius) {
-
         this.game.gameOver();
-
       }
-
     }
-
   });
-
-
 
   /* Shark rises, holds, falls; touching it -> game over */
-
   AFRAME.registerComponent('shark-attack', {
-
     schema: {
-
       rise:{default:900}, hold:{default:600}, fall:{default:900},
-
       startY:{default:-0.8}, 
-
       apexY:{default: 0.0} 
-
     },
-
     init(){
-
       this.t0 = performance.now();
-
       
-
       // Create a threat zone
-
       this.threatZone = document.createElement('a-entity');
-
       this.threatZone.setAttribute('shark-threat-zone', `hitRadius: 1.0`);
-
       this.el.appendChild(this.threatZone);
-
       
-
       const pos = this.el.getAttribute('position');
-
       this.x = pos.x; this.z = pos.z;
-
       this.el.setAttribute('rotation', `0 ${Math.floor(randRange(0,360))} 0`);
-
     },
-
     tick(){
-
       const now = performance.now();
-
       const t = now - this.t0;
-
       const {rise, hold, fall, startY, apexY} = this.data;
-
       const total = rise + hold + fall;
-
       let y;
 
-
-
       if (t < rise){
-
         const k = t / rise;
-
         y = startY + (apexY - startY) * k;
-
       } else if (t < rise + hold){
-
         y = apexY;
-
       } else if (t < total){
-
         const k = (t - rise - hold) / fall;
-
         y = apexY + (startY - apexY) * k;
-
       } else {
-
         // After the animation, remove the shark and its threat zone
-
         this.el.parentNode.removeChild(this.el);
-
         return;
-
       }
 
-
-
       this.el.setAttribute('position', `${this.x} ${y} ${this.z}`);
-
     }
-
   });
-
   </script>
-
 </body>
-
 </html>
