@@ -5,12 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ocean Survival — A-Frame</title>
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
-  <script src="https://unpkg.com/@c-frame/aframe-particle-system-component@1.2.x/dist/aframe-particle-system-component.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/aframe-simple-sun-sky@^1.2.2/simple-sun-sky.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.0/dist/aframe-extras.min.js"></script>
+    <script src="https://unpkg.com/@c-frame/aframe-particle-system-component@1.2.x/dist/aframe-particle-system-component.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-simple-sun-sky@^1.2.2/simple-sun-sky.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.0/dist/aframe-extras.min.js"></script>
   <style>
     body { margin:0; }
-    .hud { position: fixed; left: 12px; top: 12px; font: 14px/1.4 system-ui, sans-serif; color: #fff; z-index: 10; transform: translateZ(1px); /* **FIX FOR VR/FULLSCREEN** */ }
+    /* 👈 FIX: Added transform: translateZ(1px) to keep HUD always on top, even in VR */
+    .hud { 
+        position: fixed; 
+        left: 12px; 
+        top: 12px; 
+        font: 14px/1.4 system-ui, sans-serif; 
+        color: #fff; 
+        z-index: 10; 
+        transform: translateZ(1px); /* **FIX FOR VR/FULLSCREEN** */
+    }
     .hud .pill { background: rgba(0,0,0,.45); padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; }
   </style>
 </head>
@@ -38,18 +47,18 @@
         ocean="density: 40; amplitude: 0.2; width: 1000; depth: 1000; speed: 4"
         material="color: #192f3d; opacity: 0.75; metalness: 0; roughness: 1"
         rotation="-90 0 0" 
-        position="0 -3 0">
+        position="0 -2 0">
     </a-entity>
 
     <a-simple-sun-sky sun-position="1 0.4 0"></a-simple-sun-sky>
     <a-entity light="type: ambient; color: #888"></a-entity>
 
         <a-entity id="rig" position="0 0.7 0" 
-        movement-controls="speed: 0.2"> 
+        movement-controls="speed: 0.2"> 
       <a-entity id="player" camera look-controls position="0 -0.3 0"></a-entity>
     </a-entity>
 
-        <a-entity id="collectibles"></a-entity>
+    <a-entity id="collectibles"></a-entity>
 
         <a-entity id="game" game-manager target-spawner="intervalMin: 4000; intervalMax: 7000; radius: 25; count: 2; minSep: 6"></a-entity>
   </a-scene>
@@ -78,8 +87,8 @@
       this.player = document.querySelector('#rig');
 
       // 📐 Forced to 50x50 boundary for bottle spawning (25 - 2 buffer = 23)
-      this.halfW = 25; 
-      this.halfD = 25;
+      this.halfW = 23; 
+      this.halfD = 23;
 
       this.survival = 100;
       setMeter(this.survival);
@@ -132,8 +141,8 @@
       // Disable movement and look
       const rig = document.getElementById('rig');
       rig.removeAttribute('movement-controls');
-      document.getElementById('player').removeAttribute('look-controls'); 
-      
+      document.getElementById('player').removeAttribute('look-controls'); 
+      
       const parent = document.getElementById('collectibles');
       while (parent.firstChild) parent.removeChild(parent.firstChild);
     },
@@ -259,7 +268,7 @@
       const disk = document.createElement('a-entity');
       disk.setAttribute('geometry','primitive: circle; radius: 4.8');
       disk.setAttribute('material','color:#aa0000; opacity:0.5; side:double; depthTest:false');
-      disk.setAttribute('rotation','90 0 0'); 
+      disk.setAttribute('rotation','90 0 0'); 
       this.el.appendChild(disk);
 
       this.start = performance.now();
@@ -278,11 +287,11 @@
         this.resolved = true;
         const pos = this.el.getAttribute('position'); // scene coords
         const shark = document.createElement('a-entity');
-        shark.setAttribute('position', `${pos.x} -0.8 ${pos.z}`); // start below water
+        shark.setAttribute('position', `${pos.x} -1.0 ${pos.z}`); // Adjusted start position slightly lower
         shark.setAttribute('gltf-model', '#sharkGLTF');
-        shark.setAttribute('shrink-on-load', 's:0.5'); 
+        shark.setAttribute('shrink-on-load', 's:1.0');  
         shark.setAttribute('animation-mixer', 'clip:*; loop:once; timeScale:1');
-        shark.setAttribute('shark-attack','rise:900; hold:600; fall:900; hitRadius:1.0');
+        shark.setAttribute('shark-attack','rise:900; hold:600; fall:900; apexY: -0.2'); 
         this.el.sceneEl.appendChild(shark);
 
         // remove the red marker once shark is spawned
@@ -292,7 +301,7 @@
   });
   
   AFRAME.registerComponent('shark-threat-zone', {
-    schema: { hitRadius: { default: 1.0 } },
+    schema: { hitRadius: { default: 2.0 } }, 
     init() {
       this.player = document.querySelector('#rig');
       this.game = document.querySelector('#game').components['game-manager'];
@@ -302,7 +311,7 @@
         return;
       }
       
-      // Player is at Y=0.3. Shark apex is at Y=0.0. An offset of 1.0 positions the sphere right on the player's height.
+      // Player is at Y=0.7 (default). Set sphere position based on shark's new size/position.
       this.el.setAttribute('position', '0 1.0 0'); 
     },
     tick() {
@@ -324,15 +333,15 @@
   AFRAME.registerComponent('shark-attack', {
     schema: {
       rise:{default:900}, hold:{default:600}, fall:{default:900},
-      **startY:{default:-3.0},** // ⬅️ CHANGED: Starts much deeper now
-      **apexY:{default: -1.5}**  // ⬅️ CHANGED: Jumps to a lower peak, remaining mostly submerged
+      startY:{default:-1.0}, // Adjusted startY to match the new spawn position 
+      apexY:{default: -0.2} // Adjusted apexY slightly lower for a larger shark
     },
     init(){
       this.t0 = performance.now();
       
       // Create a threat zone
       this.threatZone = document.createElement('a-entity');
-      this.threatZone.setAttribute('shark-threat-zone', `hitRadius: 2.0`);
+      this.threatZone.setAttribute('shark-threat-zone', `hitRadius: 2.0`); // Ensures the threat zone is aware of the new radius
       this.el.appendChild(this.threatZone);
       
       const pos = this.el.getAttribute('position');
